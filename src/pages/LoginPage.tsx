@@ -57,7 +57,7 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-texto-suave">
         ¿No tenés cuenta?{" "}
-        <Link to="/register" className="font-medium text-primario hover:underline">
+        <Link to="/register" className="font-medium text-secundario hover:underline">
           Registrate
         </Link>
       </p>

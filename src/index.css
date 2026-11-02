@@ -7,18 +7,29 @@
  * estas variables CSS. El panel (más adelante, desde las preferencias del usuario) las
  * cambia en vivo con applyTheme() y toda la app se actualiza sin recargar.
  *
- * Variables "base": las que se eligen (ver src/features/theme/defaultTheme.ts).
- * Variables derivadas: se calculan solas a partir de las base con color-mix.
+ * Variables "base": las que se eligen. Los colores vienen de la paleta (ver
+ * src/features/theme/paletas.ts) y el resto del tema, de defaultTheme.ts.
+ * Variables derivadas: se calculan solas a partir de las base.
  */
 :root {
-  /* base (valores por defecto; applyTheme() las pisa) */
-  --primario: #4f46e5;
+  /* base: la paleta por defecto de src/features/theme/paletas.ts (applyTheme() las pisa) */
+  --primario: #6c5ce7;
   --primario-texto: #ffffff;
-  --secundario: #0ea5e9;
-  --fondo: #ffffff;
-  --texto: #0f172a;
-  --peligro: #dc2626;
-  --peligro-texto: #ffffff;
+  --primario-oscuro: #4b3fd8;
+  --secundario: #8b7bff;
+  --fondo: #000000;
+  --superficie: #0a0a0c;
+  --borde: #1f1f24;
+  --texto: #ffffff;
+  --texto-suave: #a1a1aa;
+  --peligro: #ef4444;
+  --peligro-texto: #000000;
+  --exito: #22c55e;
+  --info: #818cf8;
+  --aviso: #f59e0b;
+  --rosa: #ec4899;
+  --sombra: #000000;
+  --esquema: dark;
 
   --fuente-titulo: ui-sans-serif, system-ui, sans-serif;
   --fuente-subtitulo: ui-sans-serif, system-ui, sans-serif;
@@ -28,11 +39,12 @@
   --radio-boton: 0.5rem;
   --sombra-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 
-  /* derivadas: se adaptan solas si cambian fondo/texto/primario */
-  --superficie: color-mix(in srgb, var(--texto) 4%, var(--fondo));
-  --borde: color-mix(in srgb, var(--texto) 15%, var(--fondo));
-  --texto-suave: color-mix(in srgb, var(--texto) 60%, var(--fondo));
-  --primario-hover: color-mix(in srgb, var(--primario) 85%, black);
+  /* derivadas: se adaptan solas a la paleta */
+  --primario-hover: var(--secundario);
+  --sombra-flotante: 0 10px 30px -8px color-mix(in srgb, var(--primario) 35%, transparent);
+
+  /* controles nativos del navegador (selects, scroll, fechas) según la paleta */
+  color-scheme: var(--esquema);
 }
 
 /*
@@ -44,12 +56,17 @@
   --color-primario: var(--primario);
   --color-primario-texto: var(--primario-texto);
   --color-primario-hover: var(--primario-hover);
+  --color-primario-oscuro: var(--primario-oscuro);
   --color-secundario: var(--secundario);
   --color-fondo: var(--fondo);
   --color-superficie: var(--superficie);
   --color-texto: var(--texto);
   --color-texto-suave: var(--texto-suave);
   --color-borde: var(--borde);
+  --color-exito: var(--exito);
+  --color-info: var(--info);
+  --color-aviso: var(--aviso);
+  --color-rosa: var(--rosa);
   --color-peligro: var(--peligro);
   --color-peligro-texto: var(--peligro-texto);
 
@@ -61,6 +78,13 @@
   --radius-boton: var(--radio-boton);
 
   --shadow-card: var(--sombra-card);
+  --shadow-flotante: var(--sombra-flotante);
+}
+
+/* Ancho del contenido: siempre el 90% del espacio disponible. Lo usan los layouts. */
+@utility contenedor {
+  width: 90%;
+  margin-inline: auto;
 }
 
 body {

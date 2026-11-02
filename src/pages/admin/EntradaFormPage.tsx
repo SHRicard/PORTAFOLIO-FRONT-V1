@@ -37,7 +37,7 @@ export default function EntradaFormPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div>
         <Link to="/admin/blog" className="inline-flex items-center gap-1 text-sm text-texto-suave hover:text-texto">
           <ArrowLeft className="size-4" aria-hidden />

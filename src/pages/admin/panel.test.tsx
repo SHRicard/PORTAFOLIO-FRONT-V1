@@ -4,6 +4,8 @@ import { Provider } from "react-redux";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeStore } from "@/app/store";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { PublicLayout } from "@/components/layout/PublicLayout";
 import { sessionStarted } from "@/features/auth/authActions";
 import type { Archivo } from "@/features/archivos/types";
 import { BlogLista } from "@/features/blog/BlogLista";
@@ -18,8 +20,12 @@ import { ProyectoForm } from "@/features/proyectos/ProyectoForm";
 import type { Proyecto } from "@/features/proyectos/types";
 import { defaultTheme } from "@/features/theme/defaultTheme";
 import { GRUPOS_FUENTES } from "@/features/theme/fuentes";
+import { PALETAS } from "@/features/theme/paletas";
+import { setNavegacion, setVistaWeb } from "@/features/theme/themeSlice";
 import { useApplyTheme } from "@/features/theme/useApplyTheme";
 import { api } from "@/services/api";
+import HomePage from "@/pages/HomePage";
+import { VISTAS } from "@/vistas";
 import ArchivosPage from "./ArchivosPage";
 import EntradaFormPage from "./EntradaFormPage";
 import EntradasPage from "./EntradasPage";
@@ -679,6 +685,111 @@ describe("blog en el panel", () => {
   });
 });
 
+/** Los datos que pide la web pública */
+const servidorWebPublica = () =>
+  servidor((_metodo, url) => {
+    if (url.includes("/perfil")) return ok({ perfil: perfil({ nombreVisible: "Nombre del perfil" }) });
+    if (url.includes("/proyectos")) return listado("proyectos", []);
+    if (url.includes("/experiencia")) return listado("experiencia", []);
+    return listado("estudios", []);
+  });
+
+describe("mi nombre", () => {
+  it("aparece en el encabezado de la web pública, que no tiene pie", async () => {
+    const { caja } = await montar(<PublicLayout />);
+    expect(caja.querySelector("header")?.textContent).toContain("Ricardo Ramirez");
+    expect(caja.querySelector("footer")).toBeNull();
+  });
+
+  it("aparece en las muestras de Apariencia, sin textos de relleno", async () => {
+    const { caja } = await montar(<ThemePage />);
+    expect(caja.querySelector("h2")?.textContent).toBe("Ricardo Ramirez");
+    expect(caja.querySelector('input[name="paleta"]')?.closest("label")?.textContent).toContain("Ricardo Ramirez");
+    expect(caja.textContent).not.toContain("Tu nombre");
+  });
+});
+
+describe("web pública", () => {
+  it("muestra la vista elegida, y la primera si la elegida ya no existe", async () => {
+    servidorWebPublica();
+    const { caja, store } = await montar(<HomePage />);
+    expect(caja.querySelector("h1")?.textContent).toBe("Ricardo Ramirez");
+
+    await act(async () => {
+      store.dispatch(setVistaWeb("basica"));
+    });
+    await hasta(() => expect(caja.textContent).toContain("Nombre del perfil"));
+
+    await act(async () => {
+      store.dispatch(setVistaWeb("no-existe"));
+    });
+    expect(caja.querySelector("h1")?.textContent).toBe("Ricardo Ramirez");
+  });
+});
+
+describe("layout del panel", () => {
+  const usuario = { id: "1", nombre: "Ana", apellido: "Pérez" };
+
+  it("muestra las secciones en la barra flotante y marca solo la actual", async () => {
+    servidor(() => ok({ user: usuario }));
+    const { caja } = await montar(<AdminLayout />, "/admin/blog");
+
+    const barra = porEtiqueta(caja, "Secciones del panel")!;
+    expect(barra.querySelectorAll("a")).toHaveLength(9);
+    const actuales = barra.querySelectorAll('[aria-current="page"]');
+    expect(actuales).toHaveLength(1);
+    expect(actuales[0].textContent).toBe("Blog");
+  });
+
+  it("centra la sección actual, porque en celular la barra se desliza", async () => {
+    servidor(() => ok({ user: usuario }));
+    const centrar = vi.fn();
+    Element.prototype.scrollIntoView = centrar;
+
+    await montar(<AdminLayout />, "/admin/apariencia");
+
+    expect(centrar).toHaveBeenCalledWith({ inline: "center", block: "nearest" });
+    expect((centrar.mock.contexts[0] as Element).textContent).toBe("Apariencia");
+    Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+  });
+
+  it("dibuja la navegación elegida en Apariencia, en su lugar", async () => {
+    servidor(() => ok({ user: usuario }));
+    const { caja, store } = await montar(<AdminLayout />, "/admin/blog");
+    const barra = () => porEtiqueta(caja, "Secciones del panel")!;
+    const nombres = () => [...barra().querySelectorAll("a")].map((a) => a.textContent).filter(Boolean);
+    const alPie = () =>
+      Boolean(caja.querySelector("main")!.compareDocumentPosition(barra()) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const elegir = (estilo: Parameters<typeof setNavegacion>[0]) =>
+      act(async () => {
+        store.dispatch(setNavegacion(estilo));
+      });
+
+    // Por defecto, la cápsula: al pie y con todos los nombres
+    expect(alPie()).toBe(true);
+    expect(nombres()).toHaveLength(9);
+
+    await elegir("dock");
+    expect(alPie()).toBe(true);
+    expect(nombres()).toEqual(["Blog"]);
+
+    await elegir("tabs");
+    expect(alPie()).toBe(false);
+    expect(nombres()).toHaveLength(9);
+  });
+
+  it("deja arriba el usuario, el enlace al sitio y el cierre de sesión", async () => {
+    servidor(() => ok({ user: usuario }));
+    const { caja, store } = await montar(<AdminLayout />, "/admin");
+
+    await hasta(() => expect(caja.querySelector("header")?.textContent).toContain("Ana Pérez"));
+    expect(caja.querySelector('header a[href="/"]')?.textContent).toContain("Ver sitio");
+
+    await click(boton(caja, "Cerrar sesión"));
+    expect(store.getState().auth.token).toBeNull();
+  });
+});
+
 describe("apariencia", () => {
   const FUENTES = GRUPOS_FUENTES.flatMap((grupo) => grupo.fuentes);
   const fuente = (label: string) => FUENTES.find((f) => f.label === label)!;
@@ -692,6 +803,50 @@ describe("apariencia", () => {
   }
 
   afterEach(() => document.documentElement.removeAttribute("style"));
+
+  it("los apartados son Colores de app, Navegación y Vista web pública, sin colores sueltos para elegir", async () => {
+    const { caja } = await montar(<ThemePage />);
+    expect([...caja.querySelectorAll("legend")].map((l) => l.textContent)).toEqual(["Colores de app", "Navegación", "Vista web pública"]);
+    expect(caja.querySelector('input[type="color"]')).toBeNull();
+    expect(caja.textContent).not.toContain("Redondeo");
+    expect(caja.textContent).not.toContain("Tipos de card");
+  });
+
+  it("ofrece una vista web por cada carpeta de src/vistas, siempre con una elegida", async () => {
+    const { caja, store } = await montar(<ThemePage />);
+    const opciones = [...caja.querySelectorAll<HTMLInputElement>('input[name="vista-web"]')];
+
+    expect(opciones.map((o) => o.value)).toEqual(VISTAS.map((v) => v.id));
+    expect(opciones.filter((o) => o.checked).map((o) => o.value)).toEqual([store.getState().theme.vistaWeb]);
+    expect(pedidos).toHaveLength(0); // Elegir el diseño no carga la web pública
+  });
+
+  it("ofrece las paletas con una sola marcada, cada una mostrada con sus propios colores", async () => {
+    const { caja } = await montar(<ThemePage />);
+    const opciones = [...caja.querySelectorAll<HTMLInputElement>('input[name="paleta"]')];
+
+    expect(opciones.map((o) => o.value)).toEqual(PALETAS.map((p) => p.id));
+    expect(opciones.filter((o) => o.checked)).toHaveLength(1);
+
+    const muestra = opciones[0].closest("label")!.querySelector<HTMLElement>('[aria-hidden="true"]')!;
+    expect(muestra.style.backgroundColor).toBe("rgb(0, 0, 0)");
+  });
+
+  it("tiene un apartado de navegación donde siempre hay una sola opción elegida", async () => {
+    const { caja, store } = await montar(<ThemePage />);
+    const opciones = () => [...caja.querySelectorAll<HTMLInputElement>('input[name="navegacion"]')];
+    const elegidas = () => opciones().filter((o) => o.checked).map((o) => o.value);
+
+    expect(opciones().map((o) => o.value)).toEqual(["dock", "capsula", "tabs"]);
+    expect(elegidas()).toEqual(["capsula"]);
+
+    await click(opciones().find((o) => o.value === "tabs"));
+    expect(elegidas()).toEqual(["tabs"]);
+    expect(store.getState().theme.navegacion).toBe("tabs");
+
+    await click(boton(caja, "Restablecer apariencia"));
+    expect(elegidas()).toEqual(["capsula"]);
+  });
 
   it("se elige una sola tipografía entre todas las fuentes", async () => {
     const { caja } = await montar(<ThemePage />);

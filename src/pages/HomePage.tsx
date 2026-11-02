@@ -1,6 +1,8 @@
-import { Portafolio } from "@/features/portafolio/Portafolio";
+import { useVista } from "@/vistas/useVista";
 
-/** Web pública: el portafolio completo */
+/** Web pública: el portafolio, con el diseño elegido en Apariencia */
 export default function HomePage() {
-  return <Portafolio />;
+  const { Pagina } = useVista();
+
+  return <Pagina />;
 }

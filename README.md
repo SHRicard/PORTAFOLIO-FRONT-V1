@@ -1,4 +1,4 @@
-# Portafolio de Ricardo Ramírez
+# Portafolio de Ricardo Ramirez
 
 **Mi identidad digital, en un solo lugar.**
 
@@ -47,8 +47,8 @@ Este es mi portafolio: el sitio donde reúno quién soy, los proyectos que const
 
 ## Lo que tiene adentro
 
-- **Panel de administración propio**: desde `/admin` gestiono proyectos, blog, experiencia, estudios, datos públicos y archivos.
-- **Apariencia en vivo**: colores, formas y tipografía cambian al instante, sin recargar. Elijo la fuente de los títulos entre 30 opciones y la de los subtítulos y el texto se combinan solas. Por ahora es una pantalla de prueba: los cambios todavía no se guardan.
+- **Panel de administración propio**: desde `/admin` gestiono proyectos, blog, experiencia, estudios, datos públicos y archivos. La navegación se elige entre tres estilos: Dock, Cápsula o Tabs arriba.
+- **Apariencia en vivo**: colores, navegación y tipografía cambian al instante, sin recargar. Los colores se eligen de a pack: Negro y violeta, o Uva y neón. Elijo la fuente de los títulos entre 30 opciones y la de los subtítulos y el texto se combinan solas. Por ahora es una pantalla de prueba: los cambios todavía no se guardan.
 - **Arquitectura por features**: cada servicio del backend tiene su carpeta, con tipos, endpoints, validaciones y componentes.
 - **Pruebas automatizadas**: la lógica, los formularios y las pantallas del panel se prueban con el backend simulado.
 
@@ -97,7 +97,8 @@ Las variables `VITE_*` son públicas porque viajan en el código del navegador: 
 
 | Ruta | Página | Acceso |
 |---|---|---|
-| `/` | Web pública: el portafolio | Todos |
+| `/` | Web pública: el inicio de la vista elegida en Apariencia | Todos |
+| `/sobre-mi`, `/habilidades`, `/proyectos`, `/contacto` | Las demás páginas de la vista RR-DEV | Todos |
 | `/proyectos/:slug` | Un proyecto del portafolio | Todos |
 | `/blog` | Las publicaciones del blog | Todos |
 | `/blog/:slug` | Una publicación | Todos |
@@ -128,6 +129,7 @@ src/
 ├── app/              store, hooks tipados, router y guardias de ruta
 ├── services/api.ts   RTK Query base (token automático, manejo de 401)
 ├── features/         una carpeta por servicio del backend
+├── vistas/           una carpeta por cada diseño de la web pública
 ├── components/       ui/ (Button, Card, Input...) y layout/
 ├── pages/            páginas (admin/ para el panel)
 └── lib/              utilidades (cn, tokenStorage, errors, forms, color, redirect, validaciones, paginacion)
@@ -141,6 +143,7 @@ src/
 - **Peticiones**: todo pasa por RTK Query. El token se agrega solo a cada petición y, si el backend responde 401, la sesión se cierra y se redirige al login. Los endpoints de cada feature se agregan con `api.injectEndpoints`.
 - **Sesión**: el token se guarda en `localStorage` (a través de `lib/tokenStorage.ts`) y Redux es la fuente de verdad mientras la app corre. Las rutas `/admin` verifican la sesión pidiendo el perfil.
 - **Tema**: los colores, fuentes, redondeos y sombras son variables CSS que Tailwind lee en vivo (`bg-primario`, `font-titulo`, `rounded-card`...). Cambiar una variable cambia toda la app sin recargar. Las fuentes web vienen de Fontsource y cada visitante baja solo las que están en uso.
+- **Ancho**: el contenido ocupa siempre el 90% del espacio disponible. Lo define la utilidad `contenedor` de `src/index.css` y lo aplican los layouts, no cada página.
 - **Componentes**: un componente, varias variantes (`<Button estilo="contorno" />`, `<Card tipo="vidrio" />`) con `class-variance-authority`.
 
 </details>

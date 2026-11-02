@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, Outlet } from "react-router";
 import {
   BriefcaseBusiness,
   FolderKanban,
@@ -13,11 +13,12 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react";
-import { useAppDispatch } from "@/app/hooks";
+import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { sessionEnded } from "@/features/auth/authActions";
 import { useGetMeQuery } from "@/features/auth/authApi";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { NavCapsula, NavDock, NavTabs } from "./OpcionesNavegacion";
 
 /**
  * Para sumar una sección al panel: agregar una entrada acá y su ruta en src/app/router.tsx
@@ -37,58 +38,43 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon; end?: boolean }[
 export function AdminLayout() {
   const dispatch = useAppDispatch();
   const { data: user } = useGetMeQuery();
+  const navegacion = useAppSelector((state) => state.theme.navegacion);
 
   return (
-    <div className="min-h-screen md:flex">
-      <aside className="flex flex-col gap-4 border-b border-borde bg-superficie p-4 md:w-64 md:border-r md:border-b-0">
-        <div className="font-titulo text-lg font-bold text-texto">Panel</div>
+    <div className="min-h-screen">
+      <header className="border-b border-borde">
+        <div className="contenedor flex h-16 items-center justify-between gap-4">
+          <div className="font-titulo text-lg font-bold text-texto">Panel</div>
 
-        <nav className="flex gap-1 overflow-x-auto md:flex-col" aria-label="Secciones del panel">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 whitespace-nowrap rounded-boton px-3 py-2 text-sm font-medium transition-colors",
-                  isActive ? "bg-primario text-primario-texto" : "text-texto hover:bg-primario/10",
-                )
-              }
-            >
-              <Icon className="size-4" aria-hidden />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="mt-auto hidden flex-col gap-2 md:flex">
-          <Link to="/" className="flex items-center gap-2 px-3 py-2 text-sm text-texto-suave hover:text-texto">
-            <Globe className="size-4" aria-hidden />
-            Ver sitio
-          </Link>
-          {user && (
-            <p className="truncate px-3 text-sm text-texto-suave">
-              {user.nombre} {user.apellido}
-            </p>
-          )}
-          <Button estilo="contorno" tamano="sm" onClick={() => dispatch(sessionEnded())}>
-            <LogOut className="size-4" aria-hidden />
-            Cerrar sesión
-          </Button>
+          <div className="flex min-w-0 items-center gap-4">
+            {user && (
+              <p className="hidden truncate text-sm text-texto-suave md:block">
+                {user.nombre} {user.apellido}
+              </p>
+            )}
+            <Link to="/" className="flex shrink-0 items-center gap-1.5 text-sm text-texto-suave hover:text-texto">
+              <Globe className="size-4" aria-hidden />
+              Ver sitio
+            </Link>
+            <Button estilo="contorno" tamano="sm" className="shrink-0" onClick={() => dispatch(sessionEnded())}>
+              <LogOut className="size-4" aria-hidden />
+              Cerrar sesión
+            </Button>
+          </div>
         </div>
-      </aside>
+      </header>
 
-      <main className="flex-1 p-6 md:p-10">
-        {/* En celular el botón de salir va arriba del contenido (la barra lateral se compacta) */}
-        <div className="mb-6 flex justify-end md:hidden">
-          <Button estilo="contorno" tamano="sm" onClick={() => dispatch(sessionEnded())}>
-            <LogOut className="size-4" aria-hidden />
-            Cerrar sesión
-          </Button>
+      {navegacion === "tabs" && <NavTabs items={NAV_ITEMS} />}
+
+      {/* Con una barra al pie, el espacio de abajo evita que tape el final de la página */}
+      <main className={cn("pt-6 md:pt-10", navegacion === "tabs" ? "pb-10" : "pb-32")}>
+        <div className="contenedor">
+          <Outlet />
         </div>
-        <Outlet />
       </main>
+
+      {navegacion === "dock" && <NavDock items={NAV_ITEMS} />}
+      {navegacion === "capsula" && <NavCapsula items={NAV_ITEMS} />}
     </div>
   );
 }

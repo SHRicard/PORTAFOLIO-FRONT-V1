@@ -11,14 +11,14 @@ import { cn } from "@/lib/cn";
  */
 export const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 rounded-boton font-medium transition-colors " +
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario " +
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secundario " +
     "disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       estilo: {
         solido: "bg-primario text-primario-texto hover:bg-primario-hover",
-        contorno: "border border-primario text-primario hover:bg-primario/10",
-        texto: "text-primario hover:bg-primario/10",
+        contorno: "border border-primario text-secundario hover:bg-primario/10",
+        texto: "text-secundario hover:bg-primario/10",
         peligro: "bg-peligro text-peligro-texto hover:opacity-90",
       },
       tamano: {
