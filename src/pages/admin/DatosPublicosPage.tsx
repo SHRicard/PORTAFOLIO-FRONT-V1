@@ -12,7 +12,7 @@ export default function DatosPublicosPage() {
   const sinPerfil = typeof error === "object" && "status" in error && error.status === 404;
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div>
         <Title>Datos públicos</Title>
         <Subtitle className="mt-1 text-base">Lo que ven los visitantes de tu portafolio sobre vos.</Subtitle>

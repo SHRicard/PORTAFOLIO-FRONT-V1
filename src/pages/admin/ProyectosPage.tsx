@@ -58,7 +58,7 @@ export default function ProyectosPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Title>Proyectos</Title>
@@ -97,7 +97,7 @@ export default function ProyectosPage() {
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="flex flex-wrap items-center gap-2 font-medium text-texto">
                   {proyecto.titulo}
-                  {proyecto.destacado && <Star className="size-4 text-primario" aria-label="Destacado" />}
+                  {proyecto.destacado && <Star className="size-4 text-secundario" aria-label="Destacado" />}
                   <Badge estilo={ESTILO_ESTADO[proyecto.estado]}>{ESTADO_LABELS[proyecto.estado]}</Badge>
                 </p>
                 <p className="truncate text-sm text-texto-suave">{proyecto.resumen}</p>

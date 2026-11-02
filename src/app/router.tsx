@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, ScrollRestoration } from "react-router";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -20,12 +20,14 @@ import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import ProyectoPage from "@/pages/ProyectoPage";
 import RegisterPage from "@/pages/RegisterPage";
+import VistaPage from "@/pages/VistaPage";
 import { GuestRoute } from "./routes/GuestRoute";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 
 /**
  * MAPA DE RUTAS
- *  /                web pública (el portafolio)
+ *  /                web pública: el inicio de la vista elegida en Apariencia
+ *  /:pagina         las demás páginas de esa vista (/sobre-mi, /contacto...)
  *  /proyectos/:slug un proyecto del portafolio
  *  /blog            las publicaciones del blog
  *  /blog/:slug      una publicación
@@ -36,9 +38,15 @@ import { ProtectedRoute } from "./routes/ProtectedRoute";
  */
 export const router = createBrowserRouter([
   {
-    element: <PublicLayout />,
+    element: (
+      <>
+        <ScrollRestoration />
+        <PublicLayout />
+      </>
+    ),
     children: [
       { path: "/", element: <HomePage /> },
+      { path: "/:pagina", element: <VistaPage /> },
       { path: "/proyectos/:slug", element: <ProyectoPage /> },
       { path: "/blog", element: <BlogPage /> },
       { path: "/blog/:slug", element: <EntradaPage /> },

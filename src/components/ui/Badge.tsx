@@ -6,7 +6,7 @@ const badgeVariants = cva("inline-flex items-center rounded-boton px-2 py-0.5 te
   variants: {
     estilo: {
       neutro: "border border-borde bg-superficie text-texto-suave",
-      primario: "bg-primario/10 text-primario",
+      primario: "bg-primario/10 text-secundario",
       peligro: "bg-peligro/10 text-peligro",
     },
   },

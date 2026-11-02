@@ -1,0 +1,586 @@
+/*
+ * Efectos del diseño RR-DEV que no se pueden escribir con clases de Tailwind.
+ * Los colores salen siempre de las variables del tema, así cambian con la paleta.
+ */
+
+/* Hace animable el ángulo: sin esto, el destello del borde no gira */
+@property --angulo {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.rr-dev {
+  --rebote: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --salida: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --simetrica: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --sombra-isla: 0 10px 30px -18px color-mix(in srgb, var(--sombra) 70%, transparent);
+  --sombra-isla-alta: 0 18px 40px -16px color-mix(in srgb, var(--sombra) 75%, transparent);
+  --sombra-panel: 0 24px 48px -16px color-mix(in srgb, var(--sombra) 65%, transparent);
+}
+
+.rr-dev :focus-visible {
+  outline: 2px solid var(--secundario);
+  outline-offset: 3px;
+}
+
+@keyframes girar {
+  to {
+    --angulo: 360deg;
+  }
+}
+
+@keyframes barrer {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes caer {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes crecer {
+  from {
+    opacity: 0;
+    transform: scale(0.96, 0.9);
+  }
+}
+
+@keyframes pulsar {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-pulso);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+@keyframes deslizar {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes derivar {
+  from {
+    transform: translateX(-10%) scale(1);
+  }
+  to {
+    transform: translateX(10%) scale(1.15);
+  }
+}
+
+/* --o es la opacidad en reposo de cada estrella */
+@keyframes titilar {
+  0%,
+  100% {
+    opacity: var(--o);
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.06;
+    transform: scale(0.5);
+  }
+}
+
+@keyframes destellar {
+  0%,
+  60%,
+  100% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0deg);
+  }
+  78% {
+    opacity: 1;
+    transform: scale(1) rotate(30deg);
+  }
+}
+
+@keyframes entrar-girando {
+  from {
+    opacity: 0;
+    transform: rotate(-120deg) scale(0.5);
+  }
+}
+
+/* Borde de 1px de la isla: un destello blanco que gira sobre el color del borde. Con el acento se perdía en la aurora */
+.isla::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background:
+    conic-gradient(
+      from var(--angulo),
+      transparent 0deg 220deg,
+      color-mix(in srgb, var(--texto) 95%, transparent) 280deg,
+      transparent 330deg
+    ),
+    linear-gradient(var(--borde), var(--borde));
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: girar 7s linear infinite;
+  pointer-events: none;
+}
+
+/* Anillo de la foto: la misma luz que gira en el borde de la isla */
+.anillo-foto {
+  --resto: color-mix(in srgb, var(--primario) 30%, transparent);
+  background: conic-gradient(
+    from var(--angulo),
+    var(--resto) 0deg 250deg,
+    var(--secundario) 300deg,
+    var(--resto) 345deg
+  );
+  box-shadow: 0 0 50px -10px color-mix(in srgb, var(--primario) 60%, transparent);
+  animation: girar 4s linear infinite;
+}
+
+/* Anillo de luz que recorre la constelación. TechConstellation escribe --demora */
+.pulso-luz::after {
+  --color-pulso: color-mix(in srgb, var(--secundario) 55%, transparent);
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pulsar 3.6s ease-out var(--demora, 0s) infinite;
+}
+
+/* Punto verde del aviso de disponible */
+.punto-estado {
+  --color-pulso: color-mix(in srgb, var(--exito) 60%, transparent);
+  animation: pulsar 2.4s ease-out infinite;
+}
+
+/* Velo oscuro detrás del carrusel: las luces de las ciudades le competían al texto */
+.velo-lectura {
+  position: relative;
+}
+
+.velo-lectura::before {
+  content: "";
+  position: absolute;
+  inset: -1.5rem -4rem;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--sombra) 76%, transparent) 25%,
+    color-mix(in srgb, var(--sombra) 52%, transparent) 62%,
+    transparent
+  );
+}
+
+/* Carrusel: las puntas se desvanecen. El negro de la máscara no se pinta, solo marca qué se ve */
+.marquesina {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.marquesina > ul {
+  animation: deslizar 36s linear infinite;
+}
+
+.marquesina:hover > ul {
+  animation-play-state: paused;
+}
+
+/* Aurora de arriba de Inicio: tres manchas de luz que se desvanecen hacia abajo */
+.aurora {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 560px;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(#000, transparent);
+}
+
+.aurora > span {
+  position: absolute;
+  top: -170px;
+  width: 44%;
+  height: 400px;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.34;
+  animation: derivar 14s ease-in-out infinite alternate;
+}
+
+.aurora > span:nth-of-type(1) {
+  left: 4%;
+  background-color: var(--primario);
+}
+
+.aurora > span:nth-of-type(2) {
+  left: 32%;
+  background-color: var(--primario-oscuro);
+  animation-duration: 18s;
+  animation-delay: -4s;
+}
+
+.aurora > span:nth-of-type(3) {
+  left: 60%;
+  background-color: var(--secundario);
+  opacity: 0.18;
+  animation-duration: 16s;
+  animation-delay: -8s;
+}
+
+/* Cielo de estrellas. StarField escribe --o, --t y --d en cada una */
+.estrellas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.estrellas > span {
+  position: absolute;
+  border-radius: 50%;
+  background-color: var(--estrella);
+  opacity: var(--o);
+  animation: titilar var(--t) ease-in-out var(--d) infinite;
+}
+
+.estrellas > [data-tono="blanca"] {
+  --estrella: var(--texto);
+}
+
+.estrellas > [data-tono="acento"] {
+  --estrella: var(--secundario);
+}
+
+.estrellas > [data-tono="azul"] {
+  --estrella: var(--info);
+}
+
+.estrellas > [data-brillo] {
+  box-shadow: 0 0 6px 1px var(--estrella);
+}
+
+.estrellas > [data-destello] {
+  animation-name: destellar;
+}
+
+.estrellas > [data-destello]::before,
+.estrellas > [data-destello]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 1px;
+  translate: -50% -50%;
+  background: linear-gradient(90deg, transparent, var(--estrella), transparent);
+}
+
+.estrellas > [data-destello]::after {
+  rotate: 90deg;
+}
+
+/* En celulares, la mitad: el cielo queda tranquilo detrás del texto */
+@media (width < 48rem) {
+  .estrellas > span:nth-of-type(2n) {
+    display: none;
+  }
+}
+
+/* Estrella fugaz: la punta es el extremo derecho. ShootingStar la anima */
+.estrella-fugaz {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 110px;
+  height: 2px;
+  opacity: 0;
+  transform-origin: 100% 50%;
+  will-change: transform, opacity;
+}
+
+@media (width >= 48rem) {
+  .estrella-fugaz {
+    width: 180px;
+  }
+}
+
+/* Cola: una astilla que se afina hasta desaparecer */
+.estrella-fugaz::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--secundario) 40%, transparent) 45%,
+    color-mix(in srgb, var(--texto) 95%, transparent)
+  );
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+}
+
+/* Punta: un puntito brillante con un halo suave */
+.estrella-fugaz::after {
+  content: "";
+  position: absolute;
+  right: -1.5px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  translate: 0 -50%;
+  background-color: var(--texto);
+  box-shadow:
+    0 0 6px 2px color-mix(in srgb, var(--texto) 70%, transparent),
+    0 0 16px 5px color-mix(in srgb, var(--secundario) 50%, transparent);
+}
+
+/*
+ * Planeta del pie de Inicio. Arranca 44px debajo del contenedor (56px desde md). Con pantallas
+ * chicas la foto se corre a la izquierda para que el sol, que está a la derecha, siga a la vista.
+ */
+.horizonte {
+  --ancho-foto: max(100vw, 1100px);
+  --corrimiento: min(0px, calc(40vw - var(--ancho-foto) * 0.354));
+  --arranque: 44px;
+  --alcance: 760px;
+  position: absolute;
+  inset: 0;
+}
+
+@media (width >= 48rem) {
+  .horizonte {
+    --arranque: 56px;
+    --alcance: 1400px;
+  }
+}
+
+.horizonte-planeta {
+  position: absolute;
+  left: 50%;
+  top: var(--arranque);
+  bottom: 0;
+  width: 100vw;
+  overflow: hidden;
+  transform: translateX(-50%);
+}
+
+/*
+ * El brillo es la capa de oscuridad: un bloque oscuro encima también taparía el cielo que se ve
+ * por la transparencia. La primera máscara difumina el horizonte siguiendo su curva: el centro y
+ * el radio salen de medir el arco de la foto (820, 3358 y 3340 sobre 1920 de ancho). La segunda
+ * funde el final, que es un corte recto, en pantallas muy altas.
+ */
+.horizonte-tierra {
+  --radio: calc(var(--ancho-foto) * 1.7396);
+  --orilla: calc(var(--ancho-foto) * 0.04);
+  position: absolute;
+  left: calc(50% + var(--corrimiento));
+  top: 0;
+  width: var(--ancho-foto);
+  max-width: none;
+  translate: -50% 0;
+  filter: brightness(0.55);
+  mask-image:
+    radial-gradient(
+      circle at 42.65% calc(var(--ancho-foto) * 1.7488),
+      #000 calc(var(--radio) - var(--orilla)),
+      rgb(0 0 0 / 0.5) calc(var(--radio) - var(--orilla) * 0.4),
+      transparent calc(var(--radio) + var(--orilla) * 0.2)
+    ),
+    linear-gradient(#000 80%, transparent);
+  mask-composite: intersect;
+}
+
+/*
+ * La luz del sol sale de la misma foto: esta copia no está oscurecida y solo se ve alrededor del
+ * sol, que asoma a 1640 y 135 sobre una imagen de 1920×582.
+ */
+.horizonte-tierra-sol {
+  filter: none;
+  mask-image: radial-gradient(ellipse 40% 85% at 85.42% 23.2%, #000, rgb(0 0 0 / 0.55) 35%, transparent);
+  mask-composite: add;
+  animation: sol-latir 7s ease-in-out infinite alternate;
+}
+
+/* El resplandor que se derrama fuera del planeta, por encima del recorte de la foto */
+.horizonte-sol {
+  position: absolute;
+  left: calc(var(--corrimiento) + var(--ancho-foto) * 0.3542);
+  top: calc(var(--arranque) + var(--ancho-foto) * 0.0703);
+  mix-blend-mode: screen;
+}
+
+.horizonte-sol::before,
+.horizonte-sol::after {
+  content: "";
+  position: absolute;
+  translate: -50% -50%;
+  animation: sol-irradiar 5s ease-in-out infinite alternate;
+}
+
+.horizonte-sol::before {
+  width: calc(var(--alcance) * 0.7);
+  height: calc(var(--alcance) * 0.7);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--aviso) 52%, transparent),
+    color-mix(in srgb, var(--aviso) 30%, transparent) 30%,
+    color-mix(in srgb, var(--aviso) 9%, transparent) 65%,
+    transparent
+  );
+}
+
+/* Este se estira a lo largo del horizonte, que en ese punto está inclinado 14° */
+.horizonte-sol::after {
+  width: calc(var(--alcance) * 1.7);
+  height: calc(var(--alcance) * 0.62);
+  rotate: 14deg;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--aviso) 26%, transparent),
+    color-mix(in srgb, var(--aviso) 8%, transparent) 55%,
+    transparent
+  );
+  animation-name: sol-derramarse;
+  animation-duration: 8s;
+}
+
+@keyframes sol-latir {
+  from {
+    opacity: 0.6;
+  }
+}
+
+@keyframes sol-irradiar {
+  from {
+    opacity: 0.55;
+    scale: 0.82;
+  }
+  to {
+    opacity: 1;
+    scale: 1.2;
+  }
+}
+
+/* Se desliza a lo largo del horizonte: por eso se mueve 70px de costado y 17px de alto, los mismos 14° */
+@keyframes sol-derramarse {
+  from {
+    opacity: 0.7;
+    translate: calc(-50% + 70px) calc(-50% + 17px);
+  }
+  to {
+    opacity: 1;
+    translate: calc(-50% - 70px) calc(-50% - 17px);
+    scale: 1.12;
+  }
+}
+
+/* Panel del menú de celular y sus enlaces, que entran de a uno */
+.entrada-panel {
+  transform-origin: top;
+  animation: crecer 0.22s var(--salida);
+}
+
+.entrada-enlace {
+  animation: caer 0.45s var(--salida) both;
+}
+
+/* Pastilla que se desliza al enlace activo. useIndicadorDeslizante escribe --x y --w */
+.indicador-pastilla {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--w, 0px);
+  transform: translateX(var(--x, 0px));
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.indicador-pastilla[data-listo="true"] {
+  transition:
+    transform 0.55s var(--rebote),
+    width 0.55s var(--rebote),
+    opacity 0.25s ease;
+}
+
+.indicador-pastilla::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 38px;
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--primario) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--secundario) 35%, transparent);
+  transform: translateY(-50%);
+}
+
+.indicador-pastilla::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(50% - 15px);
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background-color: var(--secundario);
+  box-shadow: 0 0 6px var(--secundario);
+}
+
+/* Banda de luz que cruza el botón del CV */
+.boton-cv::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    color-mix(in srgb, var(--texto) 22%, transparent) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  animation: barrer 4s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+
+/* Las tres líneas del menú, que se convierten en una X */
+.hamburguesa > span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background-color: currentColor;
+  transition:
+    top 0.3s var(--simetrica),
+    rotate 0.3s var(--simetrica) 0.1s,
+    opacity 0.2s ease;
+}
+
+.icono-girando {
+  animation: entrar-girando 0.55s var(--rebote);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-dev *,
+  .rr-dev *::before,
+  .rr-dev *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -15,9 +15,6 @@ export const cardVariants = cva("rounded-card p-6", {
   defaultVariants: { tipo: "borde" },
 });
 
-export type CardTipo = NonNullable<VariantProps<typeof cardVariants>["tipo"]>;
-export const CARD_TIPOS: CardTipo[] = ["simple", "borde", "sombra", "vidrio", "minimal"];
-
 export interface CardProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof cardVariants> {}
 
 export function Card({ className, tipo, ...props }: CardProps) {

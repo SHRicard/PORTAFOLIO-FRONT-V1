@@ -56,7 +56,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <div>
         <Title>Perfil</Title>
         <Subtitle className="mt-1 text-base">Actualizá tus datos personales.</Subtitle>
