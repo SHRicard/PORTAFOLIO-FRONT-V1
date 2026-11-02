@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/*
+ * SISTEMA DE TEMA
+ * ---------------
+ * Los colores, fuentes, radios y sombras NO están fijos en los componentes: salen de
+ * estas variables CSS. El panel (más adelante, desde las preferencias del usuario) las
+ * cambia en vivo con applyTheme() y toda la app se actualiza sin recargar.
+ *
+ * Variables "base": las que se eligen (ver src/features/theme/defaultTheme.ts).
+ * Variables derivadas: se calculan solas a partir de las base con color-mix.
+ */
+:root {
+  /* base (valores por defecto; applyTheme() las pisa) */
+  --primario: #4f46e5;
+  --primario-texto: #ffffff;
+  --secundario: #0ea5e9;
+  --fondo: #ffffff;
+  --texto: #0f172a;
+  --peligro: #dc2626;
+  --peligro-texto: #ffffff;
+
+  --fuente-titulo: ui-sans-serif, system-ui, sans-serif;
+  --fuente-subtitulo: ui-sans-serif, system-ui, sans-serif;
+  --fuente-texto: ui-sans-serif, system-ui, sans-serif;
+
+  --radio-card: 0.75rem;
+  --radio-boton: 0.5rem;
+  --sombra-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+
+  /* derivadas: se adaptan solas si cambian fondo/texto/primario */
+  --superficie: color-mix(in srgb, var(--texto) 4%, var(--fondo));
+  --borde: color-mix(in srgb, var(--texto) 15%, var(--fondo));
+  --texto-suave: color-mix(in srgb, var(--texto) 60%, var(--fondo));
+  --primario-hover: color-mix(in srgb, var(--primario) 85%, black);
+}
+
+/*
+ * Puente con Tailwind: crea utilidades que leen las variables en tiempo de ejecución.
+ *   bg-primario  text-texto  border-borde  font-titulo  rounded-card  shadow-card ...
+ * "inline" es lo que hace que Tailwind use var(--x) directamente y no un valor fijo.
+ */
+@theme inline {
+  --color-primario: var(--primario);
+  --color-primario-texto: var(--primario-texto);
+  --color-primario-hover: var(--primario-hover);
+  --color-secundario: var(--secundario);
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-borde: var(--borde);
+  --color-peligro: var(--peligro);
+  --color-peligro-texto: var(--peligro-texto);
+
+  --font-titulo: var(--fuente-titulo);
+  --font-subtitulo: var(--fuente-subtitulo);
+  --font-texto: var(--fuente-texto);
+
+  --radius-card: var(--radio-card);
+  --radius-boton: var(--radio-boton);
+
+  --shadow-card: var(--sombra-card);
+}
+
+body {
+  background-color: var(--fondo);
+  color: var(--texto);
+  font-family: var(--fuente-texto);
+}
