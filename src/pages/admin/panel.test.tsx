@@ -237,6 +237,8 @@ beforeEach(() => {
       }
     },
   );
+  // jsdom no dibuja en canvas: el sol de la web pública se queda con su foto quieta
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
 });
 
 afterEach(async () => {

@@ -30,8 +30,9 @@ export function NavRow({ menu, idioma, tema, cv, hamburguesa, compacta }: NavRow
       <div className="ml-auto flex items-center gap-2 xl:ml-0">
         <div className="hidden xl:block">{idioma}</div>
         {tema}
-        <div className="hidden xl:block">{cv}</div>
-        <div className="xl:hidden">{hamburguesa}</div>
+        {/* El sol de Inicio se ubica debajo del que se vea */}
+        <div className="ancla-sol hidden xl:block">{cv}</div>
+        <div className="ancla-sol xl:hidden">{hamburguesa}</div>
       </div>
     </div>
   );

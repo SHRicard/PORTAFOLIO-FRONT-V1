@@ -1,4 +1,6 @@
 import { IslandNavbar } from "@/vistas/rr-dev/components/organisms/IslandNavbar";
+import { SpaceScene } from "@/vistas/rr-dev/components/organisms/SpaceScene";
+import BlogPage from "@/vistas/rr-dev/pages/BlogPage";
 import ContactoPage from "@/vistas/rr-dev/pages/ContactoPage";
 import HabilidadesPage from "@/vistas/rr-dev/pages/HabilidadesPage";
 import InicioPage from "@/vistas/rr-dev/pages/InicioPage";
@@ -30,11 +32,15 @@ export const rrDev: Vista = {
   descripcion: "Mi primer diseño, con la isla flotante de navegación.",
   Miniatura,
   Encabezado: IslandNavbar,
+  // El espacio con el sol y los planetas: la cámara viaja de un apartado al otro
+  Fondo: SpaceScene,
   Pagina: InicioPage,
   paginas: [
     { ruta: "sobre-mi", Pagina: SobreMiPage },
     { ruta: "habilidades", Pagina: HabilidadesPage },
     { ruta: "proyectos", Pagina: ProyectosPage },
     { ruta: "contacto", Pagina: ContactoPage },
+    // En lugar de la lista del blog: sus publicaciones tapaban el espacio
+    { ruta: "blog", Pagina: BlogPage },
   ],
 };

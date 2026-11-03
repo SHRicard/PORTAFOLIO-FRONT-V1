@@ -100,7 +100,7 @@ Las variables `VITE_*` son públicas porque viajan en el código del navegador: 
 | `/` | Web pública: el inicio de la vista elegida en Apariencia | Todos |
 | `/sobre-mi`, `/habilidades`, `/proyectos`, `/contacto` | Las demás páginas de la vista RR-DEV | Todos |
 | `/proyectos/:slug` | Un proyecto del portafolio | Todos |
-| `/blog` | Las publicaciones del blog | Todos |
+| `/blog` | Las publicaciones del blog (en la vista RR-DEV, por ahora, solo el nombre del apartado) | Todos |
 | `/blog/:slug` | Una publicación | Todos |
 | `/login`, `/register` | Ingresar y crear cuenta | Solo sin sesión |
 | `/admin` | Inicio del panel | Con sesión |

@@ -113,7 +113,7 @@
   }
 }
 
-/* Borde de 1px de la isla: un destello blanco que gira sobre el color del borde. Con el acento se perdía en la aurora */
+/* Borde de 1px de la isla: un destello del color de acento que gira sobre el color del borde */
 .isla::before {
   content: "";
   position: absolute;
@@ -124,7 +124,7 @@
     conic-gradient(
       from var(--angulo),
       transparent 0deg 220deg,
-      color-mix(in srgb, var(--texto) 95%, transparent) 280deg,
+      color-mix(in srgb, var(--secundario) 95%, transparent) 280deg,
       transparent 330deg
     ),
     linear-gradient(var(--borde), var(--borde));
@@ -166,25 +166,6 @@
   animation: pulsar 2.4s ease-out infinite;
 }
 
-/* Velo oscuro detrás del carrusel: las luces de las ciudades le competían al texto */
-.velo-lectura {
-  position: relative;
-}
-
-.velo-lectura::before {
-  content: "";
-  position: absolute;
-  inset: -1.5rem -4rem;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--sombra) 76%, transparent) 25%,
-    color-mix(in srgb, var(--sombra) 52%, transparent) 62%,
-    transparent
-  );
-}
-
 /* Carrusel: las puntas se desvanecen. El negro de la máscara no se pinta, solo marca qué se ve */
 .marquesina {
   overflow: hidden;
@@ -199,7 +180,7 @@
   animation-play-state: paused;
 }
 
-/* Aurora de arriba de Inicio: tres manchas de luz que se desvanecen hacia abajo */
+/* Aurora de arriba de Inicio: tres manchas de luz que se desvanecen hacia abajo. Tenues, para que el fondo se vea negro */
 .aurora {
   position: absolute;
   inset-inline: 0;
@@ -217,7 +198,7 @@
   height: 400px;
   border-radius: 50%;
   filter: blur(70px);
-  opacity: 0.34;
+  opacity: 0.14;
   animation: derivar 14s ease-in-out infinite alternate;
 }
 
@@ -236,7 +217,7 @@
 .aurora > span:nth-of-type(3) {
   left: 60%;
   background-color: var(--secundario);
-  opacity: 0.18;
+  opacity: 0.07;
   animation-duration: 16s;
   animation-delay: -8s;
 }
@@ -348,144 +329,252 @@
     0 0 16px 5px color-mix(in srgb, var(--secundario) 50%, transparent);
 }
 
+/* El sistema solar de Inicio se ubica debajo de lo que lleve esta clase: el botón del CV o, sin él, la hamburguesa */
+.ancla-sol {
+  anchor-name: --ancla-sol;
+}
+
 /*
- * Planeta del pie de Inicio. Arranca 44px debajo del contenedor (56px desde md). Con pantallas
- * chicas la foto se corre a la izquierda para que el sol, que está a la derecha, siga a la vista.
+ * El sol y los planetas del espacio de fondo. Cada apartado se ve un paso más lejos del sol: --escala
+ * lo achica, y la pone la cámara de SpaceScene, que la va cambiando de a poco al pasar de un apartado
+ * a otro. Las estrellas quedan afuera: están tan lejos que no se mueven.
  */
-.horizonte {
-  --ancho-foto: max(100vw, 1100px);
-  --corrimiento: min(0px, calc(40vw - var(--ancho-foto) * 0.354));
-  --arranque: 44px;
-  --alcance: 760px;
+.astros {
+  --ancho-sol: calc(clamp(150px, 15vw, 300px) * var(--escala, 1));
   position: absolute;
   inset: 0;
 }
 
-@media (width >= 48rem) {
-  .horizonte {
-    --arranque: 56px;
-    --alcance: 1400px;
+/*
+ * El sol, a lo lejos, justo debajo del botón del CV: centrado en él, con el disco 16px más abajo
+ * que la isla, que termina 15px debajo del botón. Es fijo, como el navbar, y así puede anclarse a
+ * él. Medido sobre los fotogramas: el disco está centrado, con un radio de 190 sobre 512, y
+ * arranca a 66 del borde de arriba.
+ */
+.sistema-solar {
+  --ancho: var(--ancho-sol);
+  position: fixed;
+  position-anchor: --ancla-sol;
+  left: anchor(center);
+  top: calc(anchor(bottom) + 31px - var(--ancho) * 0.129);
+  width: var(--ancho);
+  aspect-ratio: 1;
+  translate: -50% 0;
+}
+
+/* Sin anclas, el centro se calcula: el botón termina donde el contenedor (95%) menos el relleno de la isla */
+@supports not (anchor-name: --ancla-sol) {
+  .sistema-solar {
+    --boton: 44px;
+    left: calc(95% - clamp(12px, 2vw, 24px) - var(--boton) / 2);
+    top: calc(96px - var(--ancho) * 0.129);
+  }
+
+  @media (width >= 80rem) {
+    .sistema-solar {
+      --boton: 144px;
+    }
   }
 }
 
-.horizonte-planeta {
+.sol,
+.sol > *,
+.planeta > * {
   position: absolute;
-  left: 50%;
-  top: var(--arranque);
-  bottom: 0;
-  width: 100vw;
-  overflow: hidden;
-  transform: translateX(-50%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-/*
- * El brillo es la capa de oscuridad: un bloque oscuro encima también taparía el cielo que se ve
- * por la transparencia. La primera máscara difumina el horizonte siguiendo su curva: el centro y
- * el radio salen de medir el arco de la foto (820, 3358 y 3340 sobre 1920 de ancho). La segunda
- * funde el final, que es un corte recto, en pantallas muy altas.
- */
-.horizonte-tierra {
-  --radio: calc(var(--ancho-foto) * 1.7396);
-  --orilla: calc(var(--ancho-foto) * 0.04);
+/* La luz que irradia: un resplandor amplio que respira, por detrás de las llamas */
+.sol::before {
+  content: "";
   position: absolute;
-  left: calc(50% + var(--corrimiento));
-  top: 0;
-  width: var(--ancho-foto);
-  max-width: none;
-  translate: -50% 0;
-  filter: brightness(0.55);
-  mask-image:
-    radial-gradient(
-      circle at 42.65% calc(var(--ancho-foto) * 1.7488),
-      #000 calc(var(--radio) - var(--orilla)),
-      rgb(0 0 0 / 0.5) calc(var(--radio) - var(--orilla) * 0.4),
-      transparent calc(var(--radio) + var(--orilla) * 0.2)
-    ),
-    linear-gradient(#000 80%, transparent);
-  mask-composite: intersect;
+  inset: -80%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--aviso) 60%, transparent) 22%,
+    color-mix(in srgb, var(--aviso) 28%, transparent) 40%,
+    color-mix(in srgb, var(--aviso) 10%, transparent) 65%,
+    transparent
+  );
+  mix-blend-mode: screen;
+  animation: sol-irradiar 6s ease-in-out infinite alternate;
 }
 
-/*
- * La luz del sol sale de la misma foto: esta copia no está oscurecida y solo se ve alrededor del
- * sol, que asoma a 1640 y 135 sobre una imagen de 1920×582.
- */
-.horizonte-tierra-sol {
-  filter: none;
-  mask-image: radial-gradient(ellipse 40% 85% at 85.42% 23.2%, #000, rgb(0 0 0 / 0.55) 35%, transparent);
-  mask-composite: add;
-  animation: sol-latir 7s ease-in-out infinite alternate;
-}
-
-/* El resplandor que se derrama fuera del planeta, por encima del recorte de la foto */
-.horizonte-sol {
-  position: absolute;
-  left: calc(var(--corrimiento) + var(--ancho-foto) * 0.3542);
-  top: calc(var(--arranque) + var(--ancho-foto) * 0.0703);
+/* El anillo de llamas mide 1.8 veces el sol: llamas.ts lo dibuja con esa medida */
+.sol > .sol-llamas {
+  inset: -40%;
+  width: 180%;
+  height: 180%;
   mix-blend-mode: screen;
 }
 
-.horizonte-sol::before,
-.horizonte-sol::after {
+/*
+ * Los planetas, vistos desde uno que mira al sol. La cámara (camara.ts) los ubica: pone --x y --y,
+ * el centro, y --diametro, el del disco, y en la escena --sol-x y --sol-y, el centro del sol. --luz
+ * es el ángulo de donde les viene la luz en sus fotogramas (medido). El planeta se gira para que
+ * esa luz venga del sol; la caja no, así puede llevar a la Luna sin girarla. Los fotogramas de los
+ * planetas tienen el disco centrado, con un radio de 344 sobre 400: la caja es el diámetro / 0.86.
+ */
+.astro {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: calc(var(--diametro) / 0.86);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+.astro > .planeta,
+.luna-noche > .planeta {
+  rotate: calc(atan2(var(--sol-y) - var(--y), var(--sol-x) - var(--x)) - var(--luz));
+}
+
+.mercurio {
+  --luz: -44deg;
+}
+
+.venus {
+  --luz: -42deg;
+}
+
+/* Viene iluminada desde arriba a la izquierda (medido promediando los 72 fotogramas): para que la luz venga del sol, queda girada casi un cuarto de vuelta */
+.tierra {
+  --luz: -133deg;
+}
+
+.marte {
+  --luz: -41deg;
+}
+
+.jupiter {
+  --luz: -40deg;
+}
+
+/*
+ * Saturno, con sus anillos: sus fotogramas miden 1600 × 892 y el disco no está centrado. Medido: el
+ * centro en (807, 427.7) y un radio de 250.3, y la luz le viene de la derecha. La caja se agranda para
+ * que el disco mida --diametro, se corre para que su centro quede en --x y --y, y el planeta gira
+ * alrededor de ese centro: así la luz viene del sol y los anillos se inclinan con él
+ */
+.astro.saturno {
+  --luz: 0deg;
+  width: calc(var(--diametro) * 1600 / 500.6);
+  aspect-ratio: 1600 / 892;
+  translate: calc(-807 / 1600 * 100%) calc(-427.7 / 892 * 100%);
+}
+
+.astro.saturno > .planeta {
+  transform-origin: calc(807 / 1600 * 100%) calc(427.7 / 892 * 100%);
+}
+
+.planeta {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * La Luna, del lado de noche de la Tierra: en la línea que va del sol a la Tierra, pasando la
+ * Tierra, a 1.1 diámetros de su centro. Va dentro de la caja de la Tierra, centrada en ella, y del
+ * lado nuestro, por delante. Siempre le muestra la misma cara a la Tierra, así que no da vueltas ni
+ * gira sobre su eje: queda de ese lado mientras la Tierra gira. Mide 0.4 de la Tierra.
+ */
+.luna-noche {
+  --luz: -41deg;
+  --hacia-el-sol: atan2(var(--sol-y) - var(--y), var(--sol-x) - var(--x));
+  --distancia-luna: calc(var(--diametro) * 1.1);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--diametro) * 0.4 / 0.86);
+  aspect-ratio: 1;
+  translate:
+    calc(-50% - cos(var(--hacia-el-sol)) * var(--distancia-luna))
+    calc(-50% - sin(var(--hacia-el-sol)) * var(--distancia-luna));
+  z-index: 1;
+}
+
+/*
+ * Los satélites, dentro de la caja de la Tierra: cada uno se mide con su diámetro. JavaScript los
+ * mueve desde el centro de la Tierra (satelites.ts); en la mitad de la órbita que pasa por detrás,
+ * .detras los pone debajo de la Tierra, y en su sombra, .en-sombra los apaga de a poco.
+ */
+.satelites {
+  position: absolute;
+  inset: 0;
+}
+
+.satelite {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--diametro) * var(--ancho-satelite));
+  max-width: none;
+  translate: -50% -50%;
+  z-index: 1;
+  will-change: transform;
+  transition: filter 1.5s ease;
+}
+
+.satelite.detras {
+  z-index: -1;
+}
+
+.satelite.en-sombra {
+  filter: brightness(0.25);
+}
+
+/* Encendido del contenido: las estrellas van encima de las piezas. useEncendido las ubica y las anima */
+.luces-encendido {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.estrella-encendido {
+  position: absolute;
+}
+
+/* Los mismos rayos que la cabeza del cometa del menú: cuatro en cruz y cuatro más cortos en diagonal */
+.estrella-encendido::before {
+  --rayo: color-mix(in srgb, var(--texto) 85%, var(--secundario));
   content: "";
   position: absolute;
-  translate: -50% -50%;
-  animation: sol-irradiar 5s ease-in-out infinite alternate;
+  inset: 0;
+  background:
+    linear-gradient(var(--rayo), var(--rayo)) center / 100% 1px no-repeat,
+    linear-gradient(var(--rayo), var(--rayo)) center / 1px 100% no-repeat,
+    linear-gradient(45deg, transparent calc(50% - 0.5px), var(--rayo) 50%, transparent calc(50% + 0.5px)) center / 55%
+      55% no-repeat,
+    linear-gradient(-45deg, transparent calc(50% - 0.5px), var(--rayo) 50%, transparent calc(50% + 0.5px)) center / 55%
+      55% no-repeat;
+  mask: radial-gradient(closest-side, #000, transparent);
 }
 
-.horizonte-sol::before {
-  width: calc(var(--alcance) * 0.7);
-  height: calc(var(--alcance) * 0.7);
+/* El núcleo: blanco en el centro y del color de acento hacia afuera */
+.estrella-encendido::after {
+  content: "";
+  position: absolute;
+  inset: 32%;
+  border-radius: 50%;
   background: radial-gradient(
     closest-side,
-    color-mix(in srgb, var(--aviso) 52%, transparent),
-    color-mix(in srgb, var(--aviso) 30%, transparent) 30%,
-    color-mix(in srgb, var(--aviso) 9%, transparent) 65%,
+    var(--texto),
+    color-mix(in srgb, var(--secundario) 70%, transparent) 45%,
     transparent
   );
-}
-
-/* Este se estira a lo largo del horizonte, que en ese punto está inclinado 14° */
-.horizonte-sol::after {
-  width: calc(var(--alcance) * 1.7);
-  height: calc(var(--alcance) * 0.62);
-  rotate: 14deg;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--aviso) 26%, transparent),
-    color-mix(in srgb, var(--aviso) 8%, transparent) 55%,
-    transparent
-  );
-  animation-name: sol-derramarse;
-  animation-duration: 8s;
-}
-
-@keyframes sol-latir {
-  from {
-    opacity: 0.6;
-  }
 }
 
 @keyframes sol-irradiar {
   from {
-    opacity: 0.55;
-    scale: 0.82;
-  }
-  to {
-    opacity: 1;
-    scale: 1.2;
-  }
-}
-
-/* Se desliza a lo largo del horizonte: por eso se mueve 70px de costado y 17px de alto, los mismos 14° */
-@keyframes sol-derramarse {
-  from {
     opacity: 0.7;
-    translate: calc(-50% + 70px) calc(-50% + 17px);
+    scale: 0.92;
   }
   to {
     opacity: 1;
-    translate: calc(-50% - 70px) calc(-50% - 17px);
-    scale: 1.12;
+    scale: 1.08;
   }
 }
 
@@ -499,8 +588,11 @@
   animation: caer 0.45s var(--salida) both;
 }
 
-/* Pastilla que se desliza al enlace activo. useIndicadorDeslizante escribe --x y --w */
-.indicador-pastilla {
+/*
+ * Cometa que vuela al enlace activo: la cabeza va 13px debajo del centro del texto.
+ * useIndicadorDeslizante escribe --x y --w (el enlace) y, al cambiar de enlace, anima la estela
+ */
+.indicador-cometa {
   position: absolute;
   inset-block: 0;
   left: 0;
@@ -510,36 +602,116 @@
   transition: opacity 0.25s ease;
 }
 
-.indicador-pastilla[data-listo="true"] {
+/* Frena al llegar, sin pasarse: la estela sigue a la cabeza con este mismo tiempo */
+.indicador-cometa[data-listo="true"] {
   transition:
-    transform 0.55s var(--rebote),
-    width 0.55s var(--rebote),
+    transform 0.6s var(--salida),
+    width 0.6s var(--salida),
     opacity 0.25s ease;
 }
 
-.indicador-pastilla::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: 50%;
-  height: 38px;
-  border-radius: 999px;
-  background-color: color-mix(in srgb, var(--primario) 16%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--secundario) 35%, transparent);
-  transform: translateY(-50%);
-}
-
-.indicador-pastilla::after {
+/* La cabeza: un núcleo blanco con su halo del color de acento, que late con el destello */
+.indicador-cometa::after {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: calc(50% - 15px);
-  width: 4px;
-  height: 4px;
-  margin-left: -2px;
+  top: calc(50% + 13px);
+  width: 5px;
+  height: 5px;
+  translate: -50% -50%;
   border-radius: 50%;
-  background-color: var(--secundario);
-  box-shadow: 0 0 6px var(--secundario);
+  background-color: var(--texto);
+  box-shadow:
+    0 0 4px 1px var(--secundario),
+    0 0 12px 3px color-mix(in srgb, var(--secundario) 55%, transparent);
+  animation: latir-cometa 2.4s ease-in-out infinite;
+}
+
+/*
+ * El destello de la cabeza, como el de una estrella: cuatro rayos en cruz y cuatro más cortos en
+ * diagonal, que se afinan hacia la punta. Crece, gira apenas y se achica. Quieto, queda a medio brillo
+ */
+.indicador-cometa::before {
+  --rayo: color-mix(in srgb, var(--texto) 85%, var(--secundario));
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 13px);
+  width: 22px;
+  height: 22px;
+  translate: -50% -50%;
+  background:
+    linear-gradient(var(--rayo), var(--rayo)) center / 100% 1px no-repeat,
+    linear-gradient(var(--rayo), var(--rayo)) center / 1px 100% no-repeat,
+    linear-gradient(45deg, transparent calc(50% - 0.5px), var(--rayo) 50%, transparent calc(50% + 0.5px)) center / 55%
+      55% no-repeat,
+    linear-gradient(-45deg, transparent calc(50% - 0.5px), var(--rayo) 50%, transparent calc(50% + 0.5px)) center / 55%
+      55% no-repeat;
+  mask: radial-gradient(closest-side, #000, transparent);
+  opacity: 0.8;
+  animation: destellar-cometa 2.4s ease-in-out infinite;
+}
+
+@keyframes destellar-cometa {
+  0%,
+  100% {
+    opacity: 0.45;
+    scale: 0.65;
+    rotate: 0deg;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.15;
+    rotate: 15deg;
+  }
+}
+
+@keyframes latir-cometa {
+  50% {
+    scale: 1.25;
+  }
+}
+
+/* Lo que ya pasó la cabeza (--frente) y lo que ya se apagó desde atrás (--atras) */
+@property --frente {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --atras {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+/*
+ * La estela: un haz de luz del enlace de antes al nuevo, más brillante cerca de la cabeza.
+ * Se dibuja hacia la derecha; hacia la izquierda se da vuelta. useIndicadorDeslizante escribe
+ * --desde y --largo, y anima --frente, --atras y la opacidad
+ */
+.cometa-estela {
+  position: absolute;
+  left: var(--desde, 0px);
+  top: calc(50% + 13px);
+  width: var(--largo, 0px);
+  height: 2px;
+  translate: 0 -50%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--secundario) 70%, transparent) 70%,
+    var(--texto)
+  );
+  box-shadow: 0 0 8px color-mix(in srgb, var(--secundario) 60%, transparent);
+  clip-path: inset(-8px calc(100% - var(--frente)) -8px var(--atras));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cometa-estela[data-sentido="izquierda"] {
+  scale: -1 1;
 }
 
 /* Banda de luz que cruza el botón del CV */

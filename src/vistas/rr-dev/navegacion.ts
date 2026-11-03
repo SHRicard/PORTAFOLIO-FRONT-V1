@@ -9,8 +9,8 @@ export const ITEMS_MENU: ItemMenu[] = [
   { id: "sobre-mi", href: "/sobre-mi", label: "Sobre mí" },
   { id: "habilidades", href: "/habilidades", label: "Habilidades" },
   { id: "proyectos", href: "/proyectos", label: "Proyectos" },
-  { id: "blog", href: "/blog", label: "Blog" },
   { id: "contacto", href: "/contacto", label: "Contacto" },
+  { id: "blog", href: "/blog", label: "Blog" },
 ];
 
 export const TEXTOS = {
