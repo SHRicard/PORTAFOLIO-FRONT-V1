@@ -31,7 +31,7 @@ import {
 import { aniosDeExperiencia, armarEstadisticas, SERVICIOS } from "@/vistas/rr-dev/contenido";
 import { alturaLlama } from "@/vistas/rr-dev/llamas";
 import { ITEMS_MENU, seccionActiva } from "@/vistas/rr-dev/navegacion";
-import { posicionEn } from "@/vistas/rr-dev/rotacion";
+import { intervaloDeDibujo, posicionEn, usarChicos } from "@/vistas/rr-dev/rotacion";
 import { afuera, enOrbita, mezclar, SATELITES_CERCA, SATELITES_LEJOS } from "@/vistas/rr-dev/satelites";
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -622,23 +622,23 @@ describe("cielo del inicio", () => {
     for (const otro of [MERCURIO, TIERRA, MARTE, JUPITER]) expect(VENUS.vuelta).toBeLessThan(otro.vuelta);
   });
 
-  it("Saturno pasa sus 180 fotogramas de a uno, cada 70 ms: la luna da la vuelta en 12.6 s", () => {
-    expect(SATURNO.fotogramas).toHaveLength(180);
+  it("Saturno pasa sus 72 fotogramas de a uno, cada 70 ms: la vuelta dura 5 s", () => {
+    expect(SATURNO.fotogramas).toHaveLength(72);
     expect(SATURNO.deAUno).toBe(true);
     expect(MS_POR_CUADRO).toBe(70);
-    expect(SATURNO.vuelta).toBeCloseTo(12.6);
+    expect(SATURNO.vuelta).toBeCloseTo(5.04);
   });
 
   it("el fotograma de Saturno sale del tiempo que pasó, no de contar cuadros, y al terminar vuelve al primero", () => {
-    expect(cuadroEn(0, 180, 70)).toBe(0);
-    expect(cuadroEn(69.9, 180, 70)).toBe(0);
-    expect(cuadroEn(70, 180, 70)).toBe(1);
+    expect(cuadroEn(0, 72, 70)).toBe(0);
+    expect(cuadroEn(69.9, 72, 70)).toBe(0);
+    expect(cuadroEn(70, 72, 70)).toBe(1);
     // Si el navegador se trabó medio segundo, salta a donde corresponde: no se atrasa
-    expect(cuadroEn(70 + 500, 180, 70)).toBe(8);
-    expect(cuadroEn(179 * 70, 180, 70)).toBe(179);
-    expect(cuadroEn(180 * 70, 180, 70)).toBe(0);
+    expect(cuadroEn(70 + 500, 72, 70)).toBe(8);
+    expect(cuadroEn(71 * 70, 72, 70)).toBe(71);
+    expect(cuadroEn(72 * 70, 72, 70)).toBe(0);
     // El primer cuadro puede llegar con una hora apenas anterior a la del arranque
-    expect(cuadroEn(-3, 180, 70)).toBe(0);
+    expect(cuadroEn(-3, 72, 70)).toBe(0);
   });
 
   it("con datos ahorrados o una conexión lenta, Saturno no baja sus fotogramas", () => {
@@ -662,9 +662,44 @@ describe("cielo del inicio", () => {
     expect(satelites).toHaveLength(2);
     expect([...satelites].every((satelite) => satelite.getAttribute("alt") === "")).toBe(true);
     expect(tierra?.querySelector(":scope > .luna-noche > .planeta img")?.getAttribute("alt")).toBe("");
-    expect(LUNA.fotogramas).toHaveLength(72);
-    // Siempre le muestra la misma cara a la Tierra: no gira sobre su eje
+    // Siempre le muestra la misma cara a la Tierra: no gira sobre su eje, y le alcanza un fotograma
     expect(LUNA.vuelta).toBe(0);
+    expect(LUNA.fotogramas).toHaveLength(1);
+  });
+
+  it("los astros que giran traen sus mismos fotogramas en chico, para cuando se ven de lejos", () => {
+    for (const astro of [SOL, MERCURIO, VENUS, TIERRA, MARTE, JUPITER]) {
+      expect(astro.chicos).toHaveLength(astro.fotogramas.length);
+      expect(astro.chicos?.map((url) => url.split("/").pop()?.split("-")[0].split(".")[0])).toEqual(
+        astro.fotogramas.map((url) => url.split("/").pop()?.split("-")[0].split(".")[0]),
+      );
+    }
+  });
+
+  it("pasa a los fotogramas chicos de lejos y vuelve a los grandes de cerca, con un margen en el medio", () => {
+    expect(usarChicos(200, false)).toBe(true);
+    expect(usarChicos(300, true)).toBe(false);
+    // Entre los dos límites sigue con los que tiene: no va y viene
+    expect(usarChicos(248, false)).toBe(false);
+    expect(usarChicos(248, true)).toBe(true);
+  });
+
+  it("de cerca dibuja 30 veces por segundo; de lejos menos, sin que la superficie se corra más de medio píxel", () => {
+    // Mercurio de cerca, como en Inicio en una pantalla de alta densidad: en 3000 píxeles reales
+    expect(intervaloDeDibujo(MERCURIO, 3000)).toBeCloseTo(1000 / 30);
+    for (const astro of [SOL, MERCURIO, VENUS, TIERRA, MARTE, JUPITER]) {
+      for (const lado of [20, 60, 200, 800]) {
+        const intervalo = intervaloDeDibujo(astro, lado);
+        const corrimiento = ((2 * Math.PI) / astro.vuelta) * (lado / 2) * astro.radio * (intervalo / 1000);
+        // Nunca más seguido que hoy, y si espera más, la superficie no se corre más de medio píxel
+        expect(intervalo).toBeGreaterThanOrEqual(1000 / 30);
+        if (intervalo > 1000 / 30) expect(corrimiento).toBeLessThanOrEqual(0.5 + 1e-9);
+        // El fundido de un fotograma al siguiente avanza en al menos 16 pasos
+        expect(intervalo).toBeLessThanOrEqual(((astro.vuelta / astro.fotogramas.length) * 1000) / 16 + 1e-9);
+      }
+    }
+    // Un Mercurio lejano, de 20 píxeles, se dibuja unas 4 veces por segundo
+    expect(intervaloDeDibujo(MERCURIO, 20)).toBeGreaterThan(200);
   });
 
   it("Marte y Júpiter giran sobre su eje en 72 fotogramas; Júpiter, sin girar los píxeles", () => {
@@ -819,14 +854,14 @@ describe("cámara del espacio", () => {
   });
 
   it("Saturno llega desde detrás de la cámara: un paso antes no asoma nada, ni sus anillos ni su luna", () => {
-    // Lo que tiene algo dibujado en sus 180 fotogramas (de 1600 × 892, con el disco en 807, 427.7 y un radio de 250.3)
+    // Lo que tiene algo dibujado en sus 72 fotogramas (de 1600 × 892, con el disco en 807, 427.7 y un radio de 250.3)
     const asoma = (paso: number, pantalla: typeof ESCRITORIO) => {
       const { x, y, diametro } = ubicacion(5, paso, pantalla);
       const escala = diametro / 500.6;
       const giro = Math.atan2(pantalla.solY - y, pantalla.solX - x);
       let dentro = 0;
-      for (let u = 56; u <= 1555; u += 20) {
-        for (let v = 27; v <= 828; v += 20) {
+      for (let u = 124; u <= 1476; u += 20) {
+        for (let v = 96; v <= 793; v += 20) {
           const px = x + escala * ((u - 807) * Math.cos(giro) - (v - 427.7) * Math.sin(giro));
           const py = y + escala * ((u - 807) * Math.sin(giro) + (v - 427.7) * Math.cos(giro));
           if (px >= 0 && px <= pantalla.ancho && py >= 0 && py <= pantalla.alto) dentro++;

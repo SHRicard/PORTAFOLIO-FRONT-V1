@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, memo } from "react";
 
 /**
  * Llena justo la grilla, de 27 por 15: con otra cantidad la última fila queda a medias. Las columnas
@@ -69,8 +69,11 @@ export function armarEstrellas(cantidad: number, semilla: number): Estrella[] {
 
 const ESTRELLAS = armarEstrellas(CANTIDAD, SEMILLA);
 
-/** Cielo de estrellas que llena su contenedor. Cada una brilla a su ritmo y algunas tiran un destello. Es decorativo. */
-export function StarField() {
+/**
+ * Cielo de estrellas que llena su contenedor. Cada una brilla a su ritmo y algunas tiran un destello.
+ * Es decorativo. Nunca cambia: con `memo`, cambiar de apartado no vuelve a recorrer las 405 estrellas
+ */
+export const StarField = memo(function StarField() {
   return (
     <div aria-hidden className="estrellas">
       {ESTRELLAS.map(({ x, y, tamano, opacidad, duracion, demora, tono, destello }) => (
@@ -94,4 +97,4 @@ export function StarField() {
       ))}
     </div>
   );
-}
+});

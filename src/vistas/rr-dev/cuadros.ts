@@ -1,13 +1,14 @@
 import { prefiereMenosMovimiento } from "@/vistas/rr-dev/movimiento";
-import type { Astro } from "@/vistas/rr-dev/rotacion";
+import { type Astro, bajar } from "@/vistas/rr-dev/rotacion";
 
 /** De a cuántos fotogramas se bajan: así no se piden todos a la vez */
 const LOTE = 15;
 /**
- * Cuántos se tienen decodificados por adelantado. Los 180 decodificados ocupan cerca de 1 GB: el
+ * Cuántos se tienen decodificados por adelantado: 280 ms, de sobra para decodificar el que sigue.
+ * Todos decodificados ocupan mucho (cada fotograma de Saturno, 5.7 MB; con 180, cerca de 1 GB): el
  * navegador los descartaba y los volvía a decodificar al dibujarlos, y eso trababa la página
  */
-const ADELANTE = 8;
+const ADELANTE = 4;
 /** El ancho máximo del lienzo, en píxeles reales: el de los fotogramas */
 const ANCHO_MAXIMO = 1600;
 
@@ -21,23 +22,16 @@ export function conexionLenta() {
   return Boolean(connection?.saveData) || ["slow-2g", "2g", "3g"].includes(connection?.effectiveType ?? "");
 }
 
-/** El archivo del fotograma: desde ahí se decodifica fuera del hilo principal, no desde un `<img>` */
-const bajar = async (url: string) => {
-  const respuesta = await fetch(url);
-  if (!respuesta.ok) throw new Error(`No bajó ${url}`);
-  return respuesta.blob();
-};
-
 /**
  * Pasa los fotogramas de `astro` de a uno en `lienzo`, sin fundirlos, cada `vuelta / fotogramas` ms.
- * Sirve cuando son muchos y cambian poco de uno al otro, como la luna de Saturno: fundidos, la luna
- * se veía en dos lugares. Cuál toca sale del tiempo real, así que si el navegador se traba no se
+ * Sirve cuando son muchos y cambian poco de uno al otro, como en Saturno: cuando tenía una luna,
+ * fundida se veía en dos lugares. Cuál toca sale del tiempo real, así que si el navegador se traba no se
  * acelera ni se frena, y se dibuja solo cuando cambia. Mientras tanto queda `foto`, el primero, quieto.
  * Baja todos los fotogramas apenas arranca, de a lotes, y anima recién con todos bajados: el planeta
  * se monta cuando la cámara sale hacia él (`seDibuja`), antes de verse. Decodifica los que vienen
  * por adelantado (`ADELANTE`) y suelta los que ya pasaron. Se pausa cuando no se ve y con la pestaña
- * oculta. Sin movimiento, sin vuelta o con una conexión lenta queda la foto. Devuelve la función que
- * lo detiene.
+ * oculta, y si se desmonta antes de terminar, deja de bajar. Sin movimiento, sin vuelta o con una
+ * conexión lenta queda la foto. Devuelve la función que lo detiene.
  */
 export function pasarCuadros(lienzo: HTMLCanvasElement, foto: HTMLImageElement, astro: Astro): () => void {
   if (prefiereMenosMovimiento() || !astro.vuelta || conexionLenta()) return () => undefined;
@@ -48,6 +42,7 @@ export function pasarCuadros(lienzo: HTMLCanvasElement, foto: HTMLImageElement, 
   const proporcion = astro.fotograma ? astro.fotograma.alto / astro.fotograma.ancho : 1;
 
   let vivo = true;
+  const controlador = new AbortController();
   let archivos: Blob[] = [];
   const decodificados = new Map<number, ImageBitmap>();
   const pedidos = new Set<number>();
@@ -57,15 +52,13 @@ export function pasarCuadros(lienzo: HTMLCanvasElement, foto: HTMLImageElement, 
   let cuadro = 0;
 
   // Nítido en pantallas de más densidad, sin pasarse del ancho de los fotogramas. El tamaño cambia
-  // mientras la cámara viaja: se rehace cuando se va más de un 20% del que tiene
+  // mientras la cámara viaja: se mide al cambiar de fotograma y se rehace cuando se va más de un 20%
   const medir = () => {
     const ancho = Math.min(ANCHO_MAXIMO, Math.round(lienzo.clientWidth * devicePixelRatio));
     if (ancho > 0 && Math.abs(ancho - lienzo.width) > lienzo.width * 0.2) {
       lienzo.width = ancho;
       lienzo.height = Math.round(ancho * proporcion);
-      return true;
     }
-    return false;
   };
 
   /** Pide decodificar el de `indice` y los que le siguen, y suelta los que ya quedaron atrás */
@@ -97,7 +90,8 @@ export function pasarCuadros(lienzo: HTMLCanvasElement, foto: HTMLImageElement, 
     }
     // Si todavía no se decodificó, queda el que estaba: el lienzo se rehace recién con uno listo
     const imagen = decodificados.get(indice);
-    if (!imagen || (!medir() && indice === mostrado)) return;
+    if (!imagen || indice === mostrado) return;
+    medir();
     contexto.clearRect(0, 0, lienzo.width, lienzo.height);
     contexto.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
     if (mostrado < 0) foto.style.visibility = "hidden";
@@ -114,7 +108,8 @@ export function pasarCuadros(lienzo: HTMLCanvasElement, foto: HTMLImageElement, 
   const cargar = async () => {
     const bajados: Blob[] = [];
     for (let desde = 0; desde < fotogramas.length && vivo; desde += LOTE) {
-      bajados.push(...(await Promise.all(fotogramas.slice(desde, desde + LOTE).map(bajar))));
+      const lote = fotogramas.slice(desde, desde + LOTE).map((url) => bajar(url, controlador.signal));
+      bajados.push(...(await Promise.all(lote)));
     }
     if (!vivo) return;
     archivos = bajados;
@@ -134,6 +129,7 @@ export function pasarCuadros(lienzo: HTMLCanvasElement, foto: HTMLImageElement, 
 
   return () => {
     vivo = false;
+    controlador.abort();
     cancelAnimationFrame(cuadro);
     visible.disconnect();
     document.removeEventListener("visibilitychange", seguir);

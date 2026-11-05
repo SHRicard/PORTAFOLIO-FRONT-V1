@@ -40,9 +40,9 @@ export const PLANETAS: Planeta[] = [
   { astro: TIERRA, clase: "tierra", unPasoAtras: { lejania: 0.45, tamano: 0.8 } },
   { astro: MARTE, clase: "marte" },
   { astro: JUPITER, clase: "jupiter" },
-  // El último. Sus anillos y la órbita de su luna son más de tres veces el disco: un paso antes
-  // tiene que estar más lejos detrás de la cámara para no asomar
-  { astro: SATURNO, clase: "saturno", unPasoAntes: { lejania: 3.6 } },
+  // El último. Sus anillos miden casi tres veces el disco: un paso antes tiene que estar más lejos
+  // detrás de la cámara para no asomar
+  { astro: SATURNO, clase: "saturno", unPasoAntes: { lejania: 3 } },
 ];
 
 /** Lo que se achica el sol en cada paso */

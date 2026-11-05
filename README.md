@@ -119,6 +119,8 @@ Las variables `VITE_*` son públicas porque viajan en el código del navegador: 
 
 **Administrador** es el usuario cuyo correo es `ADMIN_CORREO` en el backend. Cualquier otra cuenta entra al panel, pero el backend le responde 403 en esas pantallas.
 
+El panel, `/login` y `/register` se bajan recién al entrar a ellos: quien visita el portafolio no baja su código.
+
 </details>
 
 <details>
