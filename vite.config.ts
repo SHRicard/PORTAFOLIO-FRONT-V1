@@ -12,10 +12,6 @@ export default defineConfig({
     },
   },
   server: { port: 5173 },
-  build: {
-    // El aviso de Vite es sobre el tamaño SIN comprimir; el bundle inicial pesa ~180 kB comprimido.
-    chunkSizeWarningLimit: 700,
-  },
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],

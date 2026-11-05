@@ -1,6 +1,10 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, memo } from "react";
 
-const CANTIDAD = 130;
+/**
+ * Llena justo la grilla, de 27 por 15: con otra cantidad la última fila queda a medias. Las columnas
+ * son impares para que, en celular, ocultar una de cada dos no deje franjas vacías.
+ */
+const CANTIDAD = 405;
 /** Otra semilla dibuja otro cielo: la misma dibuja siempre el mismo */
 const SEMILLA = 7;
 
@@ -34,7 +38,8 @@ function azarConSemilla(semilla: number): () => number {
 
 /**
  * Una estrella por celda de una grilla, en un lugar al azar dentro de ella: un cielo parejo,
- * sin montones ni huecos. Casi todas blancas y chicas, unas pocas más grandes y teñidas.
+ * sin montones ni huecos. Casi todas blancas, chicas y tenues, que dan profundidad. Unas pocas
+ * más grandes y teñidas, y menos todavía con destello.
  */
 export function armarEstrellas(cantidad: number, semilla: number): Estrella[] {
   const azar = azarConSemilla(semilla);
@@ -47,13 +52,13 @@ export function armarEstrellas(cantidad: number, semilla: number): Estrella[] {
     const y = (Math.floor(indice / columnas) + azar()) / filas;
     const tirada = azar();
     const tinte = azar();
-    const destello = tirada > 0.95;
+    const destello = tirada > 0.98;
 
     return {
       x: x * 100,
       y: y * 100,
-      tamano: destello ? 3 : tirada > 0.75 ? 2.4 : 1.3 + azar() * 0.9,
-      opacidad: 0.5 + azar() * 0.5,
+      tamano: destello ? 3 : tirada > 0.9 ? 2.4 : 1.1 + azar() * 1.1,
+      opacidad: tirada > 0.9 ? 0.6 + azar() * 0.4 : 0.45 + azar() * 0.5,
       duracion: destello ? 7 + azar() * 5 : 2.5 + azar() * 4.5,
       demora: azar() * 8,
       tono: tinte > 0.84 ? "acento" : tinte > 0.74 ? "azul" : "blanca",
@@ -64,8 +69,11 @@ export function armarEstrellas(cantidad: number, semilla: number): Estrella[] {
 
 const ESTRELLAS = armarEstrellas(CANTIDAD, SEMILLA);
 
-/** Cielo de estrellas que llena su contenedor. Cada una brilla a su ritmo y algunas tiran un destello. Es decorativo. */
-export function StarField() {
+/**
+ * Cielo de estrellas que llena su contenedor. Cada una brilla a su ritmo y algunas tiran un destello.
+ * Es decorativo. Nunca cambia: con `memo`, cambiar de apartado no vuelve a recorrer las 405 estrellas
+ */
+export const StarField = memo(function StarField() {
   return (
     <div aria-hidden className="estrellas">
       {ESTRELLAS.map(({ x, y, tamano, opacidad, duracion, demora, tono, destello }) => (
@@ -89,4 +97,4 @@ export function StarField() {
       ))}
     </div>
   );
-}
+});

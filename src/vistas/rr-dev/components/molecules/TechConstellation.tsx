@@ -16,6 +16,10 @@ const PUNTOS = [
 /** Segundos entre los anillos de luz. `.pulso-luz` dura esto por la cantidad de puntos. */
 const PASO_PULSO = 1.2;
 
+/** Al entrar al apartado: ms entre que se enciende un logo y el siguiente, y cuánto después del primero empieza la línea */
+const PASO_ENCENDIDO = 800;
+const DEMORA_LINEA = 730;
+
 interface TechConstellationProps {
   /** Hasta tres tecnologías, de arriba a abajo */
   items: Tecnologia[];
@@ -23,10 +27,12 @@ interface TechConstellationProps {
   lado: "izquierda" | "derecha";
   /** Nombra la lista para los lectores de pantalla */
   etiqueta: string;
+  /** Los ms en que se enciende el primer logo al entrar al apartado. La línea los va uniendo (ver `useEncendido`) */
+  encender?: number;
 }
 
 /** Logos unidos por líneas finas como una constelación, con un anillo de luz que los recorre */
-export function TechConstellation({ items, lado, etiqueta }: TechConstellationProps) {
+export function TechConstellation({ items, lado, etiqueta, encender }: TechConstellationProps) {
   const visibles = items.slice(0, PUNTOS.length);
   const puntos = PUNTOS.slice(0, visibles.length).map((punto) => ({
     ...punto,
@@ -46,6 +52,8 @@ export function TechConstellation({ items, lado, etiqueta }: TechConstellationPr
           stroke="currentColor"
           strokeOpacity={0.35}
           strokeWidth={1}
+          data-trazar={encender === undefined ? undefined : encender + DEMORA_LINEA}
+          data-durante={PASO_ENCENDIDO * (visibles.length - 1)}
         />
       </svg>
       <ul aria-label={etiqueta}>
@@ -57,6 +65,7 @@ export function TechConstellation({ items, lado, etiqueta }: TechConstellationPr
               key={tecnologia.id}
               className="pulso-luz absolute flex -translate-x-1/2 -translate-y-1/2"
               style={{ left: x, top: y, "--demora": `${indice * PASO_PULSO}s` } as CSSProperties}
+              data-encender={encender === undefined ? undefined : encender + indice * PASO_ENCENDIDO}
             >
               <TechBubble tecnologia={tecnologia} tamano={tamano} />
             </li>

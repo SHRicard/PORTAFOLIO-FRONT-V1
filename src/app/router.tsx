@@ -1,25 +1,12 @@
+import type { ComponentType } from "react";
 import { createBrowserRouter, ScrollRestoration } from "react-router";
-import { AdminLayout } from "@/components/layout/AdminLayout";
-import { AuthLayout } from "@/components/layout/AuthLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import ArchivosPage from "@/pages/admin/ArchivosPage";
-import DashboardPage from "@/pages/admin/DashboardPage";
-import DatosPublicosPage from "@/pages/admin/DatosPublicosPage";
-import EntradaFormPage from "@/pages/admin/EntradaFormPage";
-import EntradasPage from "@/pages/admin/EntradasPage";
-import EstudiosPage from "@/pages/admin/EstudiosPage";
-import ExperienciaPage from "@/pages/admin/ExperienciaPage";
-import ProfilePage from "@/pages/admin/ProfilePage";
-import ProyectoFormPage from "@/pages/admin/ProyectoFormPage";
-import ProyectosPage from "@/pages/admin/ProyectosPage";
-import ThemePage from "@/pages/admin/ThemePage";
+import { FullScreenSpinner } from "@/components/ui/Spinner";
 import BlogPage from "@/pages/BlogPage";
 import EntradaPage from "@/pages/EntradaPage";
 import HomePage from "@/pages/HomePage";
-import LoginPage from "@/pages/LoginPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import ProyectoPage from "@/pages/ProyectoPage";
-import RegisterPage from "@/pages/RegisterPage";
 import VistaPage from "@/pages/VistaPage";
 import { GuestRoute } from "./routes/GuestRoute";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
@@ -36,6 +23,18 @@ import { ProtectedRoute } from "./routes/ProtectedRoute";
  *
  * Para sumar una página al panel: agregar su ruta dentro de /admin y su enlace en AdminLayout.
  */
+
+/** Página que se baja recién cuando se entra a su ruta (el router espera el archivo antes de cambiar de página) */
+const diferida = (cargar: () => Promise<{ default: ComponentType }>) => ({
+  lazy: async () => ({ Component: (await cargar()).default }),
+});
+
+/** Todo el panel viene en un solo archivo: se baja una vez y después navegar adentro es instantáneo */
+type Panel = typeof import("@/pages/admin");
+const delPanel = (nombre: keyof Panel) => ({
+  lazy: async () => ({ Component: (await import("@/pages/admin"))[nombre] }),
+});
+
 export const router = createBrowserRouter([
   {
     element: (
@@ -54,12 +53,20 @@ export const router = createBrowserRouter([
   },
   {
     element: <GuestRoute />,
+    HydrateFallback: FullScreenSpinner,
     children: [
       {
-        element: <AuthLayout />,
+        lazy: async () => ({ Component: (await import("@/components/layout/AuthLayout")).AuthLayout }),
         children: [
-          { path: "/login", element: <LoginPage /> },
-          { path: "/register", element: <RegisterPage /> },
+          {
+            path: "/login",
+            // Mientras se escribe la contraseña ya va bajando el panel: al entrar no queda en blanco
+            lazy: async () => {
+              void import("@/pages/admin");
+              return { Component: (await import("@/pages/LoginPage")).default };
+            },
+          },
+          { path: "/register", ...diferida(() => import("@/pages/RegisterPage")) },
         ],
       },
     ],
@@ -67,23 +74,24 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: <ProtectedRoute />,
+    HydrateFallback: FullScreenSpinner,
     children: [
       {
-        element: <AdminLayout />,
+        ...delPanel("AdminLayout"),
         children: [
-          { index: true, element: <DashboardPage /> },
-          { path: "proyectos", element: <ProyectosPage /> },
-          { path: "proyectos/nuevo", element: <ProyectoFormPage /> },
-          { path: "proyectos/:id", element: <ProyectoFormPage /> },
-          { path: "blog", element: <EntradasPage /> },
-          { path: "blog/nuevo", element: <EntradaFormPage /> },
-          { path: "blog/:id", element: <EntradaFormPage /> },
-          { path: "experiencia", element: <ExperienciaPage /> },
-          { path: "estudios", element: <EstudiosPage /> },
-          { path: "datos-publicos", element: <DatosPublicosPage /> },
-          { path: "archivos", element: <ArchivosPage /> },
-          { path: "perfil", element: <ProfilePage /> },
-          { path: "apariencia", element: <ThemePage /> },
+          { index: true, ...delPanel("DashboardPage") },
+          { path: "proyectos", ...delPanel("ProyectosPage") },
+          { path: "proyectos/nuevo", ...delPanel("ProyectoFormPage") },
+          { path: "proyectos/:id", ...delPanel("ProyectoFormPage") },
+          { path: "blog", ...delPanel("EntradasPage") },
+          { path: "blog/nuevo", ...delPanel("EntradaFormPage") },
+          { path: "blog/:id", ...delPanel("EntradaFormPage") },
+          { path: "experiencia", ...delPanel("ExperienciaPage") },
+          { path: "estudios", ...delPanel("EstudiosPage") },
+          { path: "datos-publicos", ...delPanel("DatosPublicosPage") },
+          { path: "archivos", ...delPanel("ArchivosPage") },
+          { path: "perfil", ...delPanel("ProfilePage") },
+          { path: "apariencia", ...delPanel("ThemePage") },
         ],
       },
     ],
