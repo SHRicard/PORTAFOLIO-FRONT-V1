@@ -14,7 +14,7 @@ import { ITEMS_MENU, seccionActiva, TEXTOS } from "@/vistas/rr-dev/navegacion";
 
 /**
  * "Isla flotante": una cápsula de vidrio separada del borde, con un destello que recorre
- * su contorno. Se compacta al hacer scroll y una pastilla se desliza al enlace activo.
+ * su contorno. Se compacta al hacer scroll y un cometa vuela al enlace activo.
  */
 export function IslandNavbar() {
   const { pathname } = useLocation();

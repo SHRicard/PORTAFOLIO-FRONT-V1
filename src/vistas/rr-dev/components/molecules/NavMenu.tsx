@@ -8,7 +8,7 @@ interface NavMenuProps {
   items: ItemMenu[];
   activoId: string;
   etiqueta: string;
-  /** Menú de celular: uno debajo del otro y sin pastilla */
+  /** Menú de celular: uno debajo del otro y sin cometa */
   vertical?: boolean;
   /** Se llama después de tocar un enlace (para cerrar el menú de celular) */
   onNavegar?: () => void;
@@ -17,14 +17,15 @@ interface NavMenuProps {
 export function NavMenu({ items, activoId, etiqueta, vertical = false, onNavegar }: NavMenuProps) {
   const enlaces = useRef<(HTMLAnchorElement | null)[]>([]);
   const indicador = useRef<HTMLSpanElement>(null);
+  const estela = useRef<HTMLSpanElement>(null);
 
   const indiceActivo = items.findIndex(({ id }) => id === activoId);
-  useIndicadorDeslizante(enlaces, indicador, indiceActivo);
+  useIndicadorDeslizante(enlaces, indicador, indiceActivo, estela);
 
   return (
     <nav aria-label={etiqueta} className="w-full">
       <div className="relative">
-        {!vertical && <NavIndicator ref={indicador} visible={indiceActivo >= 0} />}
+        {!vertical && <NavIndicator ref={indicador} estela={estela} visible={indiceActivo >= 0} />}
         {/* Los enlaces se reparten todo el ancho libre de la fila */}
         <ul className={vertical ? "space-y-1" : "flex justify-evenly gap-1"}>
           {items.map((item, indice) => (
