@@ -1,4 +1,5 @@
 /** Tipos del blog. Fuente: docs/api/BLOG.md */
+import type { Paginacion } from "@/types/api";
 
 export type EstadoEntrada = "borrador" | "publicado";
 
@@ -48,3 +49,9 @@ export interface CrearEntradaInput {
 }
 
 export type ActualizarEntradaInput = Partial<CrearEntradaInput>;
+
+/** Una página de `GET /blog`: las entradas y cómo sigue la lista */
+export interface PaginaBlog {
+  entradas: EntradaResumen[];
+  paginacion: Paginacion;
+}

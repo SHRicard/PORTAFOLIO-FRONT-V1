@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import { SocialIconButton } from "@/vistas/rr-dev/components/atoms/SocialIconButton";
 
 interface SocialLinksProps {
-  redes: Perfil["redes"];
+  redes: Perfil["contacto"]["redes"];
   /** Texto de adelante. También nombra la lista */
   etiqueta: string;
   /** Texto escrito de arriba a abajo, una línea y los iconos en columna */

@@ -1,27 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { ArrowDown, ArrowUp, ExternalLink, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { mes, TIPO_PROYECTO } from "@/features/portafolio/formato";
 import {
   useEliminarProyectoMutation,
   useGetProyectosAdminQuery,
   useReordenarProyectosMutation,
 } from "@/features/proyectos/proyectosApi";
-import { ESTADO_LABELS, ESTADOS_PROYECTO, pendientes } from "@/features/proyectos/schemas";
+import { FilaProyecto } from "@/features/proyectos/FilaProyecto";
+import { ESTADO_ESTILO, ESTADO_LABELS, ESTADOS_PROYECTO, queFalta } from "@/features/proyectos/schemas";
 import type { EstadoProyecto, Proyecto } from "@/features/proyectos/types";
 import { getErrorMessage } from "@/lib/errors";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button, buttonVariants } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { CabeceraLista } from "@/components/ui/FilaLista";
+import { useConfirmar } from "@/components/ui/Confirmar";
+import { VistaFicha } from "@/components/ui/DialogoConfirmar";
 import { Select } from "@/components/ui/Select";
 import { Spinner } from "@/components/ui/Spinner";
 import { Subtitle, Title } from "@/components/ui/Typography";
-
-const ESTILO_ESTADO: Record<EstadoProyecto, "neutro" | "primario" | "peligro"> = {
-  borrador: "neutro",
-  publicado: "primario",
-  privado: "peligro",
-};
 
 export default function ProyectosPage() {
   const [estado, setEstado] = useState<EstadoProyecto | "">("");
@@ -30,6 +28,7 @@ export default function ProyectosPage() {
   const [reordenar, { isLoading: reordenando }] = useReordenarProyectosMutation();
   const [eliminar] = useEliminarProyectoMutation();
   const [errorAccion, setErrorAccion] = useState<string | null>(null);
+  const confirmar = useConfirmar();
 
   async function mover(lista: Proyecto[], desde: number, hasta: number) {
     const ids = lista.map((p) => p.id);
@@ -46,8 +45,26 @@ export default function ProyectosPage() {
   }
 
   async function borrar(proyecto: Proyecto) {
-    const mensaje = `¿Borrar "${proyecto.titulo}"? No se puede deshacer. Si solo querés ocultarlo, cambiá su estado a Privado.`;
-    if (!window.confirm(mensaje)) return;
+    const publicado = proyecto.estado === "publicado";
+    const confirmado = await confirmar({
+      tipo: "Proyecto",
+      titulo: "¿Borrar este proyecto?",
+      vista: (
+        <VistaFicha
+          titulo={proyecto.titulo}
+          imagen={proyecto.galeria[0]?.url}
+          etiqueta={<Badge estilo={ESTADO_ESTILO[proyecto.estado]}>{ESTADO_LABELS[proyecto.estado]}</Badge>}
+          detalle={`${TIPO_PROYECTO[proyecto.tipo]} · ${mes(proyecto.fecha)}`}
+        />
+      ),
+      consecuencias: [
+        { icono: Trash2, texto: `Sale ${publicado ? "de la web y del panel" : "del panel"}, con sus textos y enlaces` },
+        { icono: RotateCcw, texto: "No se puede deshacer", tono: "suave" },
+      ],
+      sugerencia: publicado ? "Si solo querés ocultarlo, cambiá su estado a Privado." : undefined,
+      textoConfirmar: "Borrar proyecto",
+    });
+    if (!confirmado) return;
 
     setErrorAccion(null);
     try {
@@ -90,77 +107,87 @@ export default function ProyectosPage() {
       {isFetching && !proyectos && <Spinner />}
       {proyectos?.length === 0 && <Alert>No hay proyectos para mostrar.</Alert>}
 
-      <ul className="space-y-3">
-        {proyectos?.map((proyecto, i) => (
-          <li key={proyecto.id}>
-            <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="flex flex-wrap items-center gap-2 font-medium text-texto">
-                  {proyecto.titulo}
-                  {proyecto.destacado && <Star className="size-4 text-secundario" aria-label="Destacado" />}
-                  <Badge estilo={ESTILO_ESTADO[proyecto.estado]}>{ESTADO_LABELS[proyecto.estado]}</Badge>
-                </p>
-                <p className="truncate text-sm text-texto-suave">{proyecto.resumen}</p>
-                <div className="flex flex-wrap gap-1">
-                  {pendientes(proyecto).map((falta) => (
-                    <Badge key={falta}>{falta}</Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1">
-                {/* Reordenar necesita la lista completa: con un filtro activo no se puede */}
-                {!estado && (
-                  <>
-                    <Button
-                      estilo="texto"
-                      tamano="sm"
-                      aria-label={`Subir ${proyecto.titulo}`}
-                      disabled={i === 0 || reordenando}
-                      onClick={() => mover(proyectos, i, i - 1)}
-                    >
-                      <ArrowUp className="size-4" aria-hidden />
-                    </Button>
-                    <Button
-                      estilo="texto"
-                      tamano="sm"
-                      aria-label={`Bajar ${proyecto.titulo}`}
-                      disabled={i === proyectos.length - 1 || reordenando}
-                      onClick={() => mover(proyectos, i, i + 1)}
-                    >
-                      <ArrowDown className="size-4" aria-hidden />
-                    </Button>
-                  </>
-                )}
-                {proyecto.estado === "publicado" && (
-                  <Link
-                    to={`/proyectos/${proyecto.slug}`}
-                    className={buttonVariants({ estilo: "texto", tamano: "sm" })}
-                    aria-label={`Ver ${proyecto.titulo} en la web`}
-                  >
-                    <ExternalLink className="size-4" aria-hidden />
-                  </Link>
-                )}
-                <Link
-                  to={`/admin/proyectos/${proyecto.id}`}
-                  className={buttonVariants({ estilo: "texto", tamano: "sm" })}
-                  aria-label={`Editar ${proyecto.titulo}`}
-                >
-                  <Pencil className="size-4" aria-hidden />
-                </Link>
-                <Button
-                  estilo="texto"
-                  tamano="sm"
-                  aria-label={`Borrar ${proyecto.titulo}`}
-                  onClick={() => borrar(proyecto)}
-                >
-                  <Trash2 className="size-4" aria-hidden />
-                </Button>
-              </div>
-            </Card>
-          </li>
-        ))}
-      </ul>
+      {/* «Lista ordenada»: una fila por proyecto, con sus columnas. Se acomodan al ancho de la lista (@container) */}
+      {proyectos && proyectos.length > 0 && (
+        <div className="@container overflow-hidden rounded-card border border-borde bg-superficie">
+          <CabeceraLista conOrden nombre="Proyecto" dato="Tipo y fecha" />
+          <ul className="divide-y divide-borde">
+            {proyectos.map((proyecto, i) => (
+              <li key={proyecto.id}>
+                {/* La portada es la primera imagen de la galería */}
+                <FilaProyecto
+                  numero={i + 1}
+                  titulo={proyecto.titulo}
+                  destacado={proyecto.destacado}
+                  estado={proyecto.estado}
+                  resumen={proyecto.resumen}
+                  tipo={proyecto.tipo}
+                  fecha={proyecto.fecha}
+                  portada={proyecto.galeria[0] ?? null}
+                  falta={queFalta(proyecto)}
+                  // Reordenar necesita la lista completa: con un filtro activo no se puede
+                  subir={
+                    !estado && (
+                      <Button
+                        estilo="texto"
+                        tamano="sm"
+                        className="h-6 w-7 px-0"
+                        aria-label={`Subir ${proyecto.titulo}`}
+                        disabled={i === 0 || reordenando}
+                        onClick={() => mover(proyectos, i, i - 1)}
+                      >
+                        <ArrowUp className="size-4" aria-hidden />
+                      </Button>
+                    )
+                  }
+                  bajar={
+                    !estado && (
+                      <Button
+                        estilo="texto"
+                        tamano="sm"
+                        className="h-6 w-7 px-0"
+                        aria-label={`Bajar ${proyecto.titulo}`}
+                        disabled={i === proyectos.length - 1 || reordenando}
+                        onClick={() => mover(proyectos, i, i + 1)}
+                      >
+                        <ArrowDown className="size-4" aria-hidden />
+                      </Button>
+                    )
+                  }
+                  acciones={
+                    <>
+                      {proyecto.estado === "publicado" && (
+                        <Link
+                          to={`/proyectos/${proyecto.slug}`}
+                          className={buttonVariants({ estilo: "texto", tamano: "sm" })}
+                          aria-label={`Ver ${proyecto.titulo} en la web`}
+                        >
+                          <ExternalLink className="size-4" aria-hidden />
+                        </Link>
+                      )}
+                      <Link
+                        to={`/admin/proyectos/${proyecto.id}`}
+                        className={buttonVariants({ estilo: "texto", tamano: "sm" })}
+                        aria-label={`Editar ${proyecto.titulo}`}
+                      >
+                        <Pencil className="size-4" aria-hidden />
+                      </Link>
+                      <Button
+                        estilo="texto"
+                        tamano="sm"
+                        aria-label={`Borrar ${proyecto.titulo}`}
+                        onClick={() => borrar(proyecto)}
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                      </Button>
+                    </>
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

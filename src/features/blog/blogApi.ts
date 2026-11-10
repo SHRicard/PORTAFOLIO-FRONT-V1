@@ -7,6 +7,7 @@ import type {
   Entrada,
   EntradaResumen,
   EstadoEntrada,
+  PaginaBlog,
 } from "./types";
 
 /**
@@ -17,6 +18,13 @@ export const blogApi = api.injectEndpoints({
   endpoints: (build) => ({
     getEntradas: build.query<EntradaResumen[], void>({
       queryFn: (_arg, _api, _extra, baseQuery) => todasLasPaginas<EntradaResumen>(baseQuery, "/blog", "entradas"),
+      providesTags: ["Blog"],
+    }),
+
+    /** Una página de la lista pública, para mostrarla de a pocas: el backend pagina y cuenta */
+    getPaginaBlog: build.query<PaginaBlog, { page: number; limit: number }>({
+      query: ({ page, limit }) => ({ url: "/blog", params: { page, limit } }),
+      transformResponse: (res: ApiSuccess<PaginaBlog>) => res.data,
       providesTags: ["Blog"],
     }),
 
@@ -60,6 +68,7 @@ export const blogApi = api.injectEndpoints({
 
 export const {
   useGetEntradasQuery,
+  useGetPaginaBlogQuery,
   useGetEntradaQuery,
   useGetEntradasAdminQuery,
   useGetEntradaAdminQuery,

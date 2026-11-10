@@ -1,12 +1,17 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
+import { makeStore } from "@/app/store";
 import { getContrastColor, isHexColor } from "@/lib/color";
 import { applyTheme, toCssVarName } from "./applyTheme";
 import { defaultNavegacion, defaultPaleta, defaultTheme, defaultVistaWeb } from "./defaultTheme";
 import { cargarFuente, cargarTodasLasFuentes, combinacionDe, GRUPOS_FUENTES, nombreFuente } from "./fuentes";
-import { PALETAS } from "./paletas";
 import { VISTAS } from "@/vistas";
-import themeReducer, { resetTheme, setNavegacion, setPaleta, setTheme, setVistaWeb } from "./themeSlice";
+import { varsDeVista } from "@/vistas/useTemaVista";
+import { estiloDeTema } from "./estiloDeTema";
+import modoVistaReducer, { setModoVista } from "./modoVistaSlice";
+import { partirNombre } from "./nombreVista";
+import { PALETAS } from "./paletas";
+import themeReducer, { resetTheme, setNavegacion, setPaleta, setTheme } from "./themeSlice";
 
 const FUENTES = GRUPOS_FUENTES.flatMap((grupo) => grupo.fuentes);
 const fuente = (label: string) => FUENTES.find((f) => f.label === label)!;
@@ -74,16 +79,96 @@ describe("vistas de la web pública", () => {
     expect(new Set(nombres).size).toBe(nombres.length);
   });
 
-  it("setVistaWeb la cambia sin tocar el resto y resetTheme la devuelve", () => {
-    let state = themeReducer(undefined, setVistaWeb("otra"));
-    expect(state.vistaWeb).toBe("otra");
-    expect(state.vars).toEqual(defaultTheme);
-    state = themeReducer(state, resetTheme());
-    expect(state.vistaWeb).toBe(defaultVistaWeb);
+  it("el primer portafolio se llama mi.universo", () => {
+    expect(VISTAS[0]).toMatchObject({ id: "rr-dev", nombre: "mi.universo" });
+  });
+
+  it("cada diseño trae sus capturas para la vidriera, propias y de su carpeta", () => {
+    for (const { id, capturas } of VISTAS) {
+      expect(capturas.escritorio, id).toContain(`vistas/${id}/capturas/escritorio`);
+      expect(capturas.celular, id).toContain(`vistas/${id}/capturas/celular`);
+    }
+  });
+
+  it("partirNombre deja aparte lo que sigue al primer punto, para pintarlo de acento", () => {
+    expect(partirNombre("mi.universo")).toEqual(["mi", ".universo"]);
+    expect(partirNombre("Básica")).toEqual(["Básica", ""]);
+    expect(partirNombre("a.b.c")).toEqual(["a", ".b.c"]);
+    // Un punto al principio no deja nada antes: va entero
+    expect(partirNombre(".oculto")).toEqual([".oculto", ""]);
+  });
+
+  it("la vista ya no vive en el tema del panel: restablecerlo no la toca", () => {
+    const state = themeReducer(undefined, resetTheme());
+    expect(Object.keys(state).sort()).toEqual(["navegacion", "paleta", "vars"]);
+  });
+});
+
+describe("tema de cada portafolio", () => {
+  const vista = (id: string) => VISTAS.find((v) => v.id === id)!;
+
+  it("cada portafolio tiene al menos un modo, sin ids repetidas, y todas sus variables", () => {
+    for (const { id, tema } of VISTAS) {
+      expect(tema.modos.length, id).toBeGreaterThan(0);
+      expect(new Set(tema.modos.map((m) => m.id)).size, id).toBe(tema.modos.length);
+      expect(Object.keys(varsDeVista(vista(id))).sort(), id).toEqual(Object.keys(defaultTheme).sort());
+    }
+  });
+
+  it("mi.universo pasa entre sus dos cielos de noche; Básica tiene uno solo", () => {
+    expect(vista("rr-dev").tema.modos.map((m) => m.id)).toEqual(["negro-violeta", "uva-neon"]);
+    expect(vista("basica").tema.modos).toHaveLength(1);
+  });
+
+  it("sin modo, o con uno que el portafolio ya no tiene, usa el primero", () => {
+    const rrDev = vista("rr-dev");
+    const primero = varsDeVista(rrDev);
+    expect(primero.fondo).toBe(rrDev.tema.modos[0]!.colores.fondo);
+    expect(varsDeVista(rrDev, "no-existe")).toEqual(primero);
+    expect(varsDeVista(rrDev, "uva-neon").fondo).toBe(rrDev.tema.modos[1]!.colores.fondo);
+  });
+
+  it("el modo se guarda por portafolio: cambiar el de uno no toca el de otro", () => {
+    let state = modoVistaReducer(undefined, setModoVista({ vista: "rr-dev", modo: "uva-neon" }));
+    expect(state).toEqual({ "rr-dev": "uva-neon" });
+    state = modoVistaReducer(state, setModoVista({ vista: "basica", modo: "oscuro" }));
+    expect(state).toEqual({ "rr-dev": "uva-neon", basica: "oscuro" });
+  });
+
+  it("el tema del panel y el modo de cada portafolio viven separados: tocar uno no cambia el otro", () => {
+    const store = makeStore();
+    const panel = store.getState().theme;
+
+    store.dispatch(setModoVista({ vista: "rr-dev", modo: "uva-neon" }));
+    expect(store.getState().theme).toEqual(panel);
+
+    store.dispatch(setPaleta("uva-neon"));
+    expect(store.getState().modoVista).toEqual({ "rr-dev": "uva-neon" });
+  });
+
+  it("estiloDeTema pone las variables de un tema en un contenedor, con el texto sobre el acento calculado", () => {
+    const estilo = estiloDeTema(varsDeVista(vista("rr-dev"), "uva-neon")) as Record<string, string>;
+    expect(estilo["--fondo"]).toBe("#1c1145");
+    expect(estilo["--fuente-titulo"]).toBe(varsDeVista(vista("rr-dev")).fuenteTitulo);
+    expect(estilo["--primario-texto"]).toBe(getContrastColor("#ff4fae"));
+    expect(estilo["--peligro-texto"]).toBe(getContrastColor("#ffb4a8"));
+  });
+
+  it("index.css vuelve a calcular las variables derivadas dentro de .tema, no solo en :root", () => {
+    const css = readFileSync("src/index.css", "utf-8");
+    const bloque = css.slice(css.indexOf(":root,\n.tema {"));
+    expect(bloque).toContain("--primario-hover: var(--secundario);");
+    expect(bloque).toContain("--sombra-flotante:");
+    expect(bloque).toContain("color-scheme: var(--esquema);");
   });
 });
 
 describe("paletas", () => {
+  // Las del panel y los modos de cada portafolio: todos pasan el mismo control
+  const TODAS = [
+    ...PALETAS,
+    ...VISTAS.flatMap((vista) => vista.tema.modos.map((modo) => ({ ...modo, nombre: `${vista.nombre} · ${modo.nombre}` }))),
+  ];
   const luminancia = (hex: string) => {
     const [r, g, b] = [1, 3, 5]
       .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
@@ -96,7 +181,7 @@ describe("paletas", () => {
   };
 
   it("toda paleta se lee bien: el texto y los enlaces pasan WCAG AA", () => {
-    for (const { nombre, colores } of PALETAS) {
+    for (const { nombre, colores } of TODAS) {
       for (const fondo of [colores.fondo, colores.superficie]) {
         for (const color of [colores.texto, colores.textoSuave, colores.secundario, colores.peligro]) {
           expect(contraste(color, fondo), `${nombre}: ${color} sobre ${fondo}`).toBeGreaterThanOrEqual(4.5);
@@ -113,7 +198,7 @@ describe("paletas", () => {
         .map((v) => v.toString(16).padStart(2, "0"))
         .join("")}`;
 
-    for (const { nombre, colores } of PALETAS) {
+    for (const { nombre, colores } of TODAS) {
       for (const fondo of [colores.fondo, colores.superficie]) {
         const sobreTinte = contraste(colores.peligro, tinte(colores.peligro, fondo));
         expect(sobreTinte, `${nombre}: peligro sobre su tinte en ${fondo}`).toBeGreaterThanOrEqual(4.5);
@@ -122,7 +207,7 @@ describe("paletas", () => {
   });
 
   it("los colores de cada paleta son hex de 6 dígitos y las ids no se repiten", () => {
-    for (const { colores } of PALETAS) {
+    for (const { colores } of TODAS) {
       const { esquema: _esquema, ...hex } = colores;
       for (const color of Object.values(hex)) expect(color).toMatch(/^#[0-9a-f]{6}$/);
     }
@@ -143,9 +228,10 @@ describe("paletas", () => {
     expect(themeReducer(antes, setPaleta("no-existe"))).toEqual(antes);
   });
 
-  it("index.css arranca con la paleta por defecto, para que no parpadee al cargar", () => {
+  it("index.css arranca con el modo por defecto del portafolio por defecto, para que no parpadee al cargar", () => {
     const css = readFileSync("src/index.css", "utf-8");
-    for (const [clave, valor] of Object.entries(defaultPaleta.colores)) {
+    const porDefecto = varsDeVista(VISTAS.find(({ id }) => id === defaultVistaWeb)!);
+    for (const [clave, valor] of Object.entries(porDefecto)) {
       expect(css).toContain(`${toCssVarName(clave)}: ${valor};`);
     }
   });

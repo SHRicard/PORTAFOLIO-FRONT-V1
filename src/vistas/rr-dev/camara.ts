@@ -16,10 +16,14 @@ export const PASOS: Record<string, number> = {
   "/blog": 5,
 };
 
-/** El paso de la ruta `pathname`, o nada si ese apartado no tiene espacio de fondo. Una publicación se ve desde el blog */
+/**
+ * El paso de la ruta `pathname`, o nada si ese apartado no tiene espacio de fondo. Una publicación se ve
+ * desde el blog, y un proyecto (`/proyectos/:slug`), desde Proyectos
+ */
 export function pasoDe(pathname: string): number | undefined {
   const ruta = pathname.replace(/\/+$/, "") || "/";
-  return PASOS[ruta.startsWith("/blog/") ? "/blog" : ruta];
+  const apartado = /^\/(blog|proyectos)\/./.exec(ruta)?.[1];
+  return PASOS[apartado ? `/${apartado}` : ruta];
 }
 
 export interface Planeta {

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeStore } from "@/app/store";
 import { sessionStarted } from "@/features/auth/authActions";
 import { experienciaApi } from "./experienciaApi";
-import { aExperienciaInput, aFormulario, EXPERIENCIA_VACIA, experienciaSchema } from "./schemas";
+import { aExperienciaInput, aFormulario, EXPERIENCIA_VACIA, experienciaSchema, queFalta } from "./schemas";
 import type { Experiencia } from "./types";
 
 const experiencia: Experiencia = {
@@ -51,14 +51,32 @@ describe("formulario de experiencia", () => {
   });
 });
 
+describe("lo que le falta a un trabajo", () => {
+  it("lo dice en una línea, o null si está completo", () => {
+    const base = { descripcion: "Hice cosas.", logros: ["Uno"], tecnologias: ["React"] };
+    expect(queFalta(base)).toBeNull();
+    expect(queFalta({ ...base, descripcion: "  " })).toBe("Falta la descripción");
+    expect(queFalta({ ...base, logros: [] })).toBe("Faltan los logros");
+    expect(queFalta({ descripcion: "", logros: [], tecnologias: [] })).toBe(
+      "Faltan la descripción, los logros y las tecnologías",
+    );
+  });
+});
+
 describe("servicio de experiencia (RTK Query)", () => {
   it("el panel lee con token y ve también lo oculto", async () => {
     const fetchMock = vi.fn(
       async (_req: Request) =>
-        new Response(JSON.stringify({ ok: true, data: { experiencia: [experiencia], paginacion: { page: 1, limit: 100, total: 1, paginas: 1 } } }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
+        new Response(
+          JSON.stringify({
+            ok: true,
+            data: { experiencia: [experiencia], paginacion: { page: 1, limit: 100, total: 1, paginas: 1 } },
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
     const store = makeStore();

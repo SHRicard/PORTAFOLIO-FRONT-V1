@@ -1,13 +1,17 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { defaultNavegacion, defaultPaleta, defaultTheme, defaultVistaWeb } from "./defaultTheme";
+import { defaultNavegacion, defaultPaleta, defaultTheme } from "./defaultTheme";
 import { PALETAS } from "./paletas";
 import type { EstiloNavegacion, ThemeVars } from "./themeTypes";
 
+/**
+ * El tema del PANEL y del login: lo elijo en Apariencia y no toca la web pública. Cada portafolio
+ * tiene el suyo en su carpeta (`src/vistas/<id>/tema.ts`), y qué portafolio se ve lo guarda el
+ * backend (`perfil.vista`). Ningún componente de `src/vistas/` importa este slice
+ */
 interface ThemeState {
   vars: ThemeVars;
   paleta: string;
   navegacion: EstiloNavegacion;
-  vistaWeb: string;
 }
 
 const themeSlice = createSlice({
@@ -16,7 +20,6 @@ const themeSlice = createSlice({
     vars: defaultTheme,
     paleta: defaultPaleta.id,
     navegacion: defaultNavegacion,
-    vistaWeb: defaultVistaWeb,
   } as ThemeState,
   reducers: {
     /** Cambia solo las variables indicadas: setTheme({ radioCard: "1.5rem" }) */
@@ -33,17 +36,14 @@ const themeSlice = createSlice({
     setNavegacion(state, action: PayloadAction<EstiloNavegacion>) {
       state.navegacion = action.payload;
     },
-    setVistaWeb(state, action: PayloadAction<string>) {
-      state.vistaWeb = action.payload;
-    },
+    /** Vuelve al tema del panel por defecto. No toca la vista guardada ni el tema de los portafolios */
     resetTheme(state) {
       state.vars = defaultTheme;
       state.paleta = defaultPaleta.id;
       state.navegacion = defaultNavegacion;
-      state.vistaWeb = defaultVistaWeb;
     },
   },
 });
 
-export const { setTheme, setPaleta, setNavegacion, setVistaWeb, resetTheme } = themeSlice.actions;
+export const { setTheme, setPaleta, setNavegacion, resetTheme } = themeSlice.actions;
 export default themeSlice.reducer;

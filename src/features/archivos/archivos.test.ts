@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeStore } from "@/app/store";
 import { sessionStarted } from "@/features/auth/authActions";
 import { getErrorMessage } from "@/lib/errors";
-import { archivosApi, esApk, validarArchivo } from "./archivosApi";
+import { archivosApi, validarArchivo } from "./archivosApi";
+import { carpetaDelArchivo, megas } from "./FilaArchivo";
 import type { Archivo, FirmaSubida } from "./types";
 
 const URL_CLOUDINARY = "https://api.cloudinary.com/v1_1/mi-cloud/image/upload";
@@ -96,115 +97,27 @@ describe("validarArchivo", () => {
     expect(validarArchivo({ type: "application/pdf", size: 1000 }, firma)).toBe("Formato no permitido: usá jpg, png, webp");
     expect(validarArchivo({ type: "image/png", size: 6 * 1024 * 1024 }, firma)).toBe("El archivo supera el máximo de 5 MB");
   });
-});
 
-describe("validarArchivo con APK", () => {
-  const reglas = { formatos: ["apk"], maxBytes: 200 * 1024 * 1024 };
-
-  it("reconoce un APK por su tipo o, si el sistema no lo informa, por la extensión", () => {
-    expect(validarArchivo({ type: "application/vnd.android.package-archive", size: 1000 }, reglas)).toBeNull();
-    expect(validarArchivo({ type: "", size: 1000, name: "Mi App.APK" }, reglas)).toBeNull();
-    expect(esApk({ type: "", name: "app.apk" })).toBe(true);
-    expect(esApk({ type: "application/pdf", name: "manual.pdf" })).toBe(false);
-  });
-
-  it("rechaza lo que no es un APK y lo que supera el máximo", () => {
-    expect(validarArchivo({ type: "application/pdf", size: 1000, name: "a.pdf" }, reglas)).toBe("Formato no permitido: usá apk");
-    expect(validarArchivo({ type: "", size: 201 * 1024 * 1024, name: "a.apk" }, reglas)).toBe("El archivo supera el máximo de 200 MB");
-  });
-});
-
-describe("subirArchivo a S3", () => {
-  const URL_BUCKET = "https://mi-bucket.s3.sa-east-1.amazonaws.com";
-  const key = "apk/mi-app/mi-app-a1b2c3.apk";
-  const firmaS3: FirmaSubida = {
-    urlSubida: URL_BUCKET,
-    campos: { key, policy: "p", "x-amz-signature": "s" },
-    formatos: ["apk"],
-    maxBytes: 200 * 1024 * 1024,
-    destino: { publicId: key, url: `${URL_BUCKET}/${key}` },
-  };
-  const apk = () => new File(["contenido"], "Mi App.apk", { type: "application/vnd.android.package-archive" });
-
-  function mockS3(respuestaS3: () => Response) {
-    const pedidos: Pedido[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (entrada: Request | string, opciones?: RequestInit) => {
-        if (typeof entrada === "string") {
-          pedidos.push({ url: entrada, authorization: new Headers(opciones?.headers).get("authorization"), body: opciones?.body });
-          return respuestaS3();
-        }
-        const body = await entrada.clone().json();
-        pedidos.push({ url: entrada.url, authorization: entrada.headers.get("authorization"), body });
-        if (entrada.url.endsWith("/archivos/firma")) return json(200, { ok: true, data: { firma: firmaS3 } });
-        return json(201, { ok: true, data: { archivo: { ...registrado, tipo: "apk", publicId: key } } });
-      }),
+  it("un PDF que no entra en Cloudinary sugiere subirlo a GitHub; un archivo vacío no se sube", () => {
+    const reglasPdf = { formatos: ["pdf"], maxBytes: 10 * 1024 * 1024 };
+    expect(validarArchivo({ type: "application/pdf", size: 3 * 1024 * 1024 }, reglasPdf)).toBeNull();
+    expect(validarArchivo({ type: "application/pdf", size: 11 * 1024 * 1024 }, reglasPdf)).toBe(
+      "El PDF supera el máximo de 10 MB: subilo a GitHub y pegá el link",
     );
-    return pedidos;
-  }
-
-  it("sube al bucket y registra el destino que eligió el backend", async () => {
-    const pedidos = mockS3(() => new Response(null, { status: 204 }));
-
-    const { data } = await storeConSesion().dispatch(
-      archivosApi.endpoints.subirArchivo.initiate({ archivo: apk(), tipo: "apk", carpeta: "apk/mi-app" }),
-    );
-
-    expect(pedidos[0]?.body).toEqual({ tipo: "apk", carpeta: "apk/mi-app", nombre: "Mi App.apk" });
-    expect(pedidos[1]?.url).toBe(URL_BUCKET);
-    expect(pedidos[2]?.body).toEqual({
-      publicId: key,
-      url: `${URL_BUCKET}/${key}`,
-      tipo: "apk",
-      formato: "apk",
-      bytes: 9,
-      nombreOriginal: "Mi App.apk",
-    });
-    expect(data?.publicId).toBe(key);
-  });
-
-  it("el token del panel nunca llega a S3", async () => {
-    const pedidos = mockS3(() => new Response(null, { status: 204 }));
-
-    await storeConSesion().dispatch(archivosApi.endpoints.subirArchivo.initiate({ archivo: apk(), tipo: "apk" }));
-
-    expect(pedidos[1]?.authorization).toBeNull();
-    expect(pedidos[2]?.authorization).toBe("Bearer tok123");
-  });
-
-  it("manda los campos firmados y el archivo al final, como exige S3", async () => {
-    const pedidos = mockS3(() => new Response(null, { status: 204 }));
-
-    await storeConSesion().dispatch(archivosApi.endpoints.subirArchivo.initiate({ archivo: apk(), tipo: "apk" }));
-
-    const campos = [...(pedidos[1]?.body as FormData).keys()];
-    expect(campos).toEqual(["key", "policy", "x-amz-signature", "file"]);
-  });
-
-  it("si S3 rechaza el archivo, muestra su mensaje y no lo registra", async () => {
-    const xml = "<Error><Code>EntityTooLarge</Code><Message>Your proposed upload exceeds the maximum allowed size</Message></Error>";
-    const pedidos = mockS3(() => new Response(xml, { status: 400 }));
-
-    const { error } = await storeConSesion().dispatch(archivosApi.endpoints.subirArchivo.initiate({ archivo: apk(), tipo: "apk" }));
-
-    expect(getErrorMessage(error)).toBe("Your proposed upload exceeds the maximum allowed size");
-    expect(pedidos).toHaveLength(2);
-  });
-
-  it("sin conexión o sin CORS en el bucket, lo avisa", async () => {
-    const pedidos = mockS3(() => {
-      throw new TypeError("Failed to fetch");
-    });
-
-    const { error } = await storeConSesion().dispatch(archivosApi.endpoints.subirArchivo.initiate({ archivo: apk(), tipo: "apk" }));
-
-    expect(getErrorMessage(error)).toBe("No se pudo conectar con S3. Revisá el CORS del bucket");
-    expect(pedidos).toHaveLength(2);
+    expect(validarArchivo({ type: "image/webp", size: 0 }, firma)).toBe("El archivo está vacío");
   });
 });
 
 describe("subirArchivo", () => {
+  it("la firma lleva solo tipo y carpeta, y sin carpeta no la manda", async () => {
+    const pedidos = mockServicios();
+    const store = storeConSesion();
+
+    await store.dispatch(archivosApi.endpoints.subirArchivo.initiate({ archivo: imagen(), tipo: "imagen" }));
+
+    expect(pedidos[0]?.body).toEqual({ tipo: "imagen" });
+  });
+
   it("hace los 3 pasos y registra lo que devolvió Cloudinary", async () => {
     const pedidos = mockServicios();
     const store = storeConSesion();
@@ -287,5 +200,23 @@ describe("subirArchivo", () => {
     const { error } = await store.dispatch(archivosApi.endpoints.subirArchivo.initiate({ archivo: imagen(), tipo: "imagen" }));
 
     expect(getErrorMessage(error)).toBe("Cloudinary no está configurado en el servidor");
+  });
+});
+
+describe("la carpeta de un archivo", () => {
+  it("sale del publicId, sin la carpeta del portafolio ni el nombre", () => {
+    expect(carpetaDelArchivo("portafolio/proyectos/facturacion-fct/qx8v")).toBe("proyectos/facturacion-fct");
+    expect(carpetaDelArchivo("portafolio/perfil/abc")).toBe("perfil");
+    expect(carpetaDelArchivo("portafolio/abc")).toBeNull();
+    expect(carpetaDelArchivo("abc")).toBeNull();
+  });
+});
+
+describe("el tamaño de un archivo", () => {
+  it("en MB, y lo chico en KB para que no diga «0 MB»", () => {
+    expect(megas(3_774_874)).toBe("3,6 MB");
+    expect(megas(182_000)).toBe("0,2 MB");
+    expect(megas(8192)).toBe("8 KB");
+    expect(megas(10)).toBe("1 KB");
   });
 });

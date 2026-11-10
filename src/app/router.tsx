@@ -1,4 +1,3 @@
-import type { ComponentType } from "react";
 import { createBrowserRouter, ScrollRestoration } from "react-router";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { FullScreenSpinner } from "@/components/ui/Spinner";
@@ -18,16 +17,11 @@ import { ProtectedRoute } from "./routes/ProtectedRoute";
  *  /proyectos/:slug un proyecto del portafolio
  *  /blog            las publicaciones del blog
  *  /blog/:slug      una publicación
- *  /login /register solo sin sesión (GuestRoute)
+ *  /login           solo sin sesión (GuestRoute). No hay registro: la app es de un solo dueño
  *  /admin/*         solo con sesión (ProtectedRoute)
  *
  * Para sumar una página al panel: agregar su ruta dentro de /admin y su enlace en AdminLayout.
  */
-
-/** Página que se baja recién cuando se entra a su ruta (el router espera el archivo antes de cambiar de página) */
-const diferida = (cargar: () => Promise<{ default: ComponentType }>) => ({
-  lazy: async () => ({ Component: (await cargar()).default }),
-});
 
 /** Todo el panel viene en un solo archivo: se baja una vez y después navegar adentro es instantáneo */
 type Panel = typeof import("@/pages/admin");
@@ -66,7 +60,6 @@ export const router = createBrowserRouter([
               return { Component: (await import("@/pages/LoginPage")).default };
             },
           },
-          { path: "/register", ...diferida(() => import("@/pages/RegisterPage")) },
         ],
       },
     ],
@@ -87,7 +80,11 @@ export const router = createBrowserRouter([
           { path: "blog/nuevo", ...delPanel("EntradaFormPage") },
           { path: "blog/:id", ...delPanel("EntradaFormPage") },
           { path: "experiencia", ...delPanel("ExperienciaPage") },
+          { path: "experiencia/nuevo", ...delPanel("ExperienciaFormPage") },
+          { path: "experiencia/:id", ...delPanel("ExperienciaFormPage") },
           { path: "estudios", ...delPanel("EstudiosPage") },
+          { path: "estudios/nuevo", ...delPanel("EstudioFormPage") },
+          { path: "estudios/:id", ...delPanel("EstudioFormPage") },
           { path: "datos-publicos", ...delPanel("DatosPublicosPage") },
           { path: "archivos", ...delPanel("ArchivosPage") },
           { path: "perfil", ...delPanel("ProfilePage") },

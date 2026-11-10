@@ -4,7 +4,7 @@ import { makeStore } from "@/app/store";
 import { sessionStarted } from "@/features/auth/authActions";
 import { getErrorMessage } from "@/lib/errors";
 import { blogApi } from "./blogApi";
-import { aEntradaInput, aFormulario, campoFormulario, ENTRADA_VACIA, entradaSchema, pendientes } from "./schemas";
+import { aEntradaInput, aFormulario, campoFormulario, ENTRADA_VACIA, entradaSchema, queFalta } from "./schemas";
 import type { Entrada } from "./types";
 
 const entrada: Entrada = {
@@ -47,11 +47,12 @@ afterEach(() => {
 
 describe("formulario del blog", () => {
   it("una entrada ida y vuelta por el formulario no pierde datos", () => {
-    const { id: _id, publicadoEn: _p, createdAt: _c, updatedAt: _u, ...original } = entrada;
+    // El slug no viaja: el formulario no lo edita y la entrada conserva el que tenía
+    const { id: _id, slug: _s, publicadoEn: _p, createdAt: _c, updatedAt: _u, ...original } = entrada;
     expect(aEntradaInput(entradaSchema.parse(aFormulario(entrada)))).toEqual(original);
   });
 
-  it("lo vacío viaja como null y el slug vacío no se manda", () => {
+  it("lo vacío viaja como null y el slug no se manda", () => {
     const input = aEntradaInput(entradaSchema.parse(valido));
     expect(input.slug).toBeUndefined();
     expect(input.portada).toBeNull();
@@ -68,7 +69,6 @@ describe("formulario del blog", () => {
     expect(mensaje({ titulo: "" })).toBe("Este campo es obligatorio");
     expect(mensaje({ resumen: "x".repeat(201) })).toBe("Máximo 200 caracteres");
     expect(mensaje({ contenido: "x".repeat(20001) })).toBe("Máximo 20000 caracteres");
-    expect(mensaje({ slug: "admin" })).toBe('El slug "admin" está reservado');
     expect(mensaje({ etiquetas: Array(11).fill("x").join("\n") })).toBe("Máximo 10 elementos");
     expect(mensaje({ etiquetas: "x".repeat(31) })).toBe("Cada línea admite hasta 30 caracteres");
     expect(mensaje({ galeria: Array(21).fill({ url: "", alt: "a" }) })).toBe("Máximo 20 imágenes en la galería");
@@ -80,9 +80,24 @@ describe("formulario del blog", () => {
     expect(resultado.error?.issues[0]?.path).toEqual(["portadaAlt"]);
   });
 
-  it("pendientes lista lo que le falta a la entrada", () => {
-    expect(pendientes(entrada)).toEqual(["Imágenes sin subir", "Documentos sin subir"]);
-    expect(pendientes({ ...entrada, portada: null, galeria: [], documentos: [] })).toEqual(["Sin portada"]);
+  it("queFalta dice en una línea lo que le falta a la entrada, o null si está completa", () => {
+    expect(queFalta(entrada)).toBe("Falta subir 1 foto y el PDF");
+    expect(queFalta({ ...entrada, portada: null, galeria: [], documentos: [] })).toBe("Falta la portada");
+    expect(queFalta({ ...entrada, portada: { url: null, alt: "P" }, galeria: [], documentos: [] })).toBe(
+      "Falta subir la portada",
+    );
+    expect(queFalta({ ...entrada, galeria: [], documentos: [] })).toBeNull();
+  });
+
+  it("acepta una foto o un PDF elegido que todavía no se subió (su URL local)", () => {
+    const resultado = entradaSchema.safeParse({
+      ...valido,
+      portadaUrl: "blob:http://localhost/1",
+      portadaAlt: "P",
+      galeria: [{ url: "blob:http://localhost/2", alt: "F" }],
+      documentos: [{ url: "blob:http://localhost/3", titulo: "M" }],
+    });
+    expect(resultado.success).toBe(true);
   });
 
   it("traduce los nombres de la API a los del formulario", () => {
@@ -96,6 +111,22 @@ describe("formulario del blog", () => {
 });
 
 describe("servicio del blog (RTK Query)", () => {
+  it("pide una sola página de la lista pública, con page y limit, y devuelve las entradas y la paginación", async () => {
+    const pagina = { page: 2, limit: 9, total: 10, paginas: 2 };
+    const fetchMock = mockFetch(() => ({ status: 200, body: { ok: true, data: { entradas: [entrada], paginacion: pagina } } }));
+
+    const { data } = await makeStore().dispatch(blogApi.endpoints.getPaginaBlog.initiate({ page: 2, limit: 9 }));
+
+    const req = fetchMock.mock.calls[0]![0];
+    const url = new URL(req.url);
+    expect(url.pathname).toMatch(/\/blog$/);
+    expect(url.searchParams.get("page")).toBe("2");
+    expect(url.searchParams.get("limit")).toBe("9");
+    expect(req.headers.get("authorization")).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(data).toEqual({ entradas: [entrada], paginacion: pagina });
+  });
+
   it("la lectura pública no manda token", async () => {
     const fetchMock = mockFetch(() => ({ status: 200, body: { ok: true, data: { entradas: [entrada], paginacion } } }));
 

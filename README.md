@@ -13,13 +13,13 @@ Este es mi portafolio: el sitio donde reúno quién soy, los proyectos que const
 | Sección | Qué muestra |
 |---|---|
 | **Sobre mí** | Quién soy, dónde estoy, cómo trabajo y si estoy disponible para nuevas oportunidades |
-| **Proyectos** | Lo que construí: detalle, tecnologías, demos, repositorios e imágenes |
+| **Proyectos** | Lo que construí: detalle, tecnologías, repositorios (el código y el APK de prueba) e imágenes |
 | **Experiencia** | Mi trayectoria laboral, con logros y tecnologías de cada trabajo |
 | **Estudios** | Carreras, cursos y certificaciones |
 | **Habilidades e idiomas** | Mi stack por área y los idiomas que hablo |
 | **Pasatiempos y datos curiosos** | El lado personal: lo que me gusta y me define fuera del trabajo |
 | **Blog** | Mis publicaciones |
-| **Contacto** | Correo, redes y CV para descargar |
+| **Contacto** | Correo, WhatsApp, llamada, videollamada y redes, con lo que estoy buscando |
 
 ## Tecnologías
 
@@ -47,8 +47,8 @@ Este es mi portafolio: el sitio donde reúno quién soy, los proyectos que const
 
 ## Lo que tiene adentro
 
-- **Panel de administración propio**: desde `/admin` gestiono proyectos, blog, experiencia, estudios, datos públicos y archivos. La navegación se elige entre tres estilos: Dock, Cápsula o Tabs arriba.
-- **Apariencia en vivo**: colores, navegación y tipografía cambian al instante, sin recargar. Los colores se eligen de a pack: Negro y violeta, o Uva y neón. Elijo la fuente de los títulos entre 30 opciones y la de los subtítulos y el texto se combinan solas. Por ahora es una pantalla de prueba: los cambios todavía no se guardan.
+- **Panel de administración propio**: el Inicio es una vidriera con todos mis portafolios y el aplicado primero; el que aplico se guarda en el perfil y lo ven todos los visitantes. Cada portafolio tiene su propio tema, separado del del panel. Desde `/admin` gestiono proyectos, blog, experiencia, estudios, datos públicos y archivos. La navegación se elige entre tres estilos: Dock, Cápsula o Tabs arriba.
+- **Apariencia del panel en vivo**: colores, navegación y tipografía del panel cambian al instante, sin recargar, y no tocan la web pública. Los colores se eligen de a pack: Negro y violeta, o Uva y neón. Elijo la fuente de los títulos entre 30 opciones y la de los subtítulos y el texto se combinan solas. El tema del panel todavía no se guarda; la vista web pública sí.
 - **Arquitectura por features**: cada servicio del backend tiene su carpeta, con tipos, endpoints, validaciones y componentes.
 - **Pruebas automatizadas**: la lógica, los formularios y las pantallas del panel se prueban con el backend simulado.
 
@@ -82,7 +82,7 @@ Las variables `VITE_*` son públicas porque viajan en el código del navegador: 
 
 | Feature | Carpeta |
 |---|---|
-| Sesión: registro, login y perfil | `src/features/auth` |
+| Sesión: login y perfil (sin registro: la app es de un solo dueño) | `src/features/auth` |
 | Tema: colores, fuentes y formas | `src/features/theme` |
 | Portafolio: lectura pública | `src/features/portafolio` |
 | Panel: proyectos | `src/features/proyectos` |
@@ -97,29 +97,36 @@ Las variables `VITE_*` son públicas porque viajan en el código del navegador: 
 
 | Ruta | Página | Acceso |
 |---|---|---|
-| `/` | Web pública: el inicio de la vista elegida en Apariencia | Todos |
-| `/sobre-mi`, `/habilidades`, `/proyectos`, `/contacto` | Las demás páginas de la vista RR-DEV | Todos |
-| `/proyectos/:slug` | Un proyecto del portafolio | Todos |
-| `/blog` | Las publicaciones del blog (en la vista RR-DEV, por ahora, solo el nombre del apartado) | Todos |
-| `/blog/:slug` | Una publicación | Todos |
-| `/login`, `/register` | Ingresar y crear cuenta | Solo sin sesión |
-| `/admin` | Inicio del panel | Con sesión |
-| `/admin/proyectos` | Lista de proyectos: filtrar, ordenar y borrar | Administrador |
+| `/` | Web pública: el inicio de la vista guardada en el perfil (`perfil.vista`) | Todos |
+| `/sobre-mi` | Sobre mí (en la vista RR-DEV, la bio, los datos curiosos y la trayectoria en una pantalla, sin scroll) | Todos |
+| `/habilidades` | Habilidades (en la vista RR-DEV, una constelación por área con el logo de cada habilidad, en una pantalla, sin scroll) | Todos |
+| `/proyectos` | Proyectos (en la vista RR-DEV, en fichas que se abren a cada lado de la Tierra, hasta 10 por página según la pantalla, sin scroll; `?ver=` abre uno en un panel y `?pagina=` cambia de página) | Todos |
+| `/contacto` | Contacto (en la vista RR-DEV, las formas de contactarme en fichas que se abren, a cada lado, sin scroll) | Todos |
+| `/proyectos/:slug` | Un proyecto del portafolio (en la vista RR-DEV, Proyectos con ese proyecto abierto en su panel; es a donde lleva «Ver en la web» del panel) | Todos |
+| `/blog` | Las publicaciones del blog (en la vista RR-DEV, una constelación paginada que entra en la pantalla, sin scroll) | Todos |
+| `/blog/:slug` | Una publicación (en la vista RR-DEV, abierta en un panel encima del blog) | Todos |
+| `/login` | Ingresar, en un amanecer con el sol de Inicio (en la vista RR-DEV no hay botón: se llega con 7 toques seguidos al logo) | Solo sin sesión |
+| `/admin` | Inicio del panel: la vidriera con todos los portafolios en tarjetas iguales, el aplicado primero | Con sesión |
+| `/admin/proyectos` | Proyectos en una lista ordenada (miniatura, estado, tipo y fecha, lo que les falta): filtrar, ordenar y borrar | Administrador |
 | `/admin/proyectos/nuevo` | Crear un proyecto | Administrador |
-| `/admin/proyectos/:id` | Editar un proyecto | Administrador |
-| `/admin/blog` | Lista de entradas del blog: filtrar y borrar | Administrador |
+| `/admin/proyectos/:id` | Editar un proyecto, con vista previa. Quitar una foto ya guardada la borra también de Cloudinary | Administrador |
+| `/admin/blog` | Lista de entradas del blog, ordenada como la de proyectos (miniatura, estado, etiquetas y fecha, lo que les falta): filtrar y borrar | Administrador |
 | `/admin/blog/nuevo` | Crear una entrada | Administrador |
 | `/admin/blog/:id` | Editar y publicar una entrada | Administrador |
-| `/admin/experiencia` | Ver, agregar, editar y ocultar trabajos | Administrador |
-| `/admin/estudios` | Ver, agregar, editar y ocultar estudios | Administrador |
-| `/admin/datos-publicos` | Bio, habilidades, redes, foto y CV del portafolio | Administrador |
-| `/admin/archivos` | Biblioteca: subir, copiar el link y borrar | Administrador |
+| `/admin/experiencia` | Trabajos en una lista ordenada como la de proyectos: ver, ocultar y borrar | Administrador |
+| `/admin/experiencia/nuevo` | Agregar un trabajo | Administrador |
+| `/admin/experiencia/:id` | Editar un trabajo | Administrador |
+| `/admin/estudios` | Estudios en una lista ordenada como la de proyectos: ver, ocultar y borrar | Administrador |
+| `/admin/estudios/nuevo` | Agregar un estudio | Administrador |
+| `/admin/estudios/:id` | Editar un estudio; el certificado se sube al guardar | Administrador |
+| `/admin/datos-publicos` | Bio, habilidades, redes, foto y CV del portafolio, con vista previa; la foto y el CV se suben al guardar | Administrador |
+| `/admin/archivos` | Biblioteca en una lista ordenada como la de proyectos (miniatura, tipo, tamaño y carpeta): subir, abrir, copiar el link y borrar | Administrador |
 | `/admin/perfil` | Mi cuenta: los datos de login | Con sesión |
-| `/admin/apariencia` | Apariencia: prueba del tema en vivo (provisoria) | Con sesión |
+| `/admin/apariencia` | Apariencia: el tema del panel (provisorio) y la vista web pública | Con sesión |
 
 **Administrador** es el usuario cuyo correo es `ADMIN_CORREO` en el backend. Cualquier otra cuenta entra al panel, pero el backend le responde 403 en esas pantallas.
 
-El panel, `/login` y `/register` se bajan recién al entrar a ellos: quien visita el portafolio no baja su código.
+El panel y `/login` se bajan recién al entrar a ellos: quien visita el portafolio no baja su código.
 
 </details>
 

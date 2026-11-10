@@ -90,23 +90,6 @@ describe("servicio de login (RTK Query)", () => {
     store.dispatch(sessionEnded());
     expect(store.getState().auth.token).toBeNull();
   });
-
-  it("el registro también inicia sesión", async () => {
-    mockFetch(() => ({ status: 201, body: { ok: true, data: { token: "nuevo", user } } }));
-    const store = makeStore();
-    await store.dispatch(
-      authApi.endpoints.register.initiate({
-        nombre: "Ana",
-        apellido: "Pérez",
-        telefono: "+54 11 5555-1234",
-        pais: "Argentina",
-        correo: "ana@mail.com",
-        sexo: "femenino",
-        password: "miclave123",
-      }),
-    );
-    expect(store.getState().auth.token).toBe("nuevo");
-  });
 });
 
 describe("manejo de errores", () => {

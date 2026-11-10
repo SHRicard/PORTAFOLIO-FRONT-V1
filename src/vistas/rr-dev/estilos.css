@@ -113,8 +113,10 @@
   }
 }
 
-/* Borde de 1px de la isla: un destello del color de acento que gira sobre el color del borde */
-.isla::before {
+/* Borde de 1px de la isla: un destello del color de acento que gira sobre el color del borde.
+ * La foto del centro del blog (`.borde-luz`) lleva la misma luz */
+.isla::before,
+.borde-luz::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -714,8 +716,9 @@
   scale: -1 1;
 }
 
-/* Banda de luz que cruza el botón del CV */
-.boton-cv::after {
+/* Banda de luz que cruza el botón del CV, y el de Ingresar del login */
+.boton-cv::after,
+.boton-luz::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -728,6 +731,257 @@
   transform: translateX(-120%);
   animation: barrer 4s ease-in-out 1.2s infinite;
   pointer-events: none;
+}
+
+/* El logo no se pinta al tocarlo en el celular: lo que se ve es el cometa */
+.logo-isla {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Con cada toque al logo (ver `Logo`), el cometa del menú cruza por debajo del nombre, del ícono al
+ * final del apellido, en 1.6 s: la misma cabeza blanca con su halo y su destello, y una cola que se
+ * estira y se acorta. Entra y sale esfumado. Si se toca rápido, pasan varios
+ */
+.cometa-logo {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 5px);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  animation: cometa-logo-viaje 1.6s cubic-bezier(0.45, 0, 0.2, 1) forwards;
+}
+
+.cometa-logo > .cola {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 96px;
+  height: 2px;
+  translate: 0 -50%;
+  border-radius: 2px;
+  transform-origin: 100% 50%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--secundario) 75%, transparent) 70%,
+    var(--texto)
+  );
+  animation: cometa-logo-cola 1.6s ease-in-out forwards;
+}
+
+.cometa-logo > .cabeza {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 5px;
+  height: 5px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background-color: var(--texto);
+  box-shadow:
+    0 0 4px 1px var(--secundario),
+    0 0 12px 3px color-mix(in srgb, var(--secundario) 55%, transparent);
+}
+
+/* El destello de la cabeza, el mismo del cometa del menú: cuatro rayos en cruz y cuatro en diagonal */
+.cometa-logo > .cabeza::before {
+  --rayo: color-mix(in srgb, var(--texto) 85%, var(--secundario));
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  translate: -50% -50%;
+  background:
+    linear-gradient(var(--rayo), var(--rayo)) center / 100% 1px no-repeat,
+    linear-gradient(var(--rayo), var(--rayo)) center / 1px 100% no-repeat,
+    linear-gradient(45deg, transparent calc(50% - 0.5px), var(--rayo) 50%, transparent calc(50% + 0.5px)) center / 55%
+      55% no-repeat,
+    linear-gradient(-45deg, transparent calc(50% - 0.5px), var(--rayo) 50%, transparent calc(50% + 0.5px)) center / 55%
+      55% no-repeat;
+  mask: radial-gradient(closest-side, #000, transparent);
+  animation: cometa-logo-destello 1.6s ease-in-out forwards;
+}
+
+@keyframes cometa-logo-viaje {
+  0% {
+    left: -6%;
+    opacity: 0;
+  }
+  14%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    left: 104%;
+    opacity: 0;
+  }
+}
+
+@keyframes cometa-logo-cola {
+  0% {
+    scale: 0.15 1;
+  }
+  45% {
+    scale: 1 1;
+  }
+  100% {
+    scale: 0.35 1;
+  }
+}
+
+@keyframes cometa-logo-destello {
+  0%,
+  100% {
+    opacity: 0.5;
+    scale: 0.65;
+    rotate: 0deg;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.2;
+    rotate: 15deg;
+  }
+}
+
+/* Sin movimiento, el cometa quedaría quieto debajo del nombre: no se muestra */
+@media (prefers-reduced-motion: reduce) {
+  .cometa-logo {
+    display: none;
+  }
+}
+
+/*
+ * La línea de tiempo del panel de Sobre mí (`TrajectoryReader`): una línea del color de acento que se
+ * apaga hacia abajo y, en cada paso, un punto del color de su lista (--tono) con su halo. Los pasos
+ * entran de a uno desde un brillo desenfocado (--orden)
+ */
+.linea-tiempo {
+  position: relative;
+  display: grid;
+  gap: 1.75rem;
+  padding-left: 1.625rem;
+}
+
+.linea-tiempo::before {
+  content: "";
+  position: absolute;
+  left: 0.375rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: linear-gradient(var(--secundario), color-mix(in srgb, var(--secundario) 15%, transparent));
+}
+
+.hito {
+  position: relative;
+  display: grid;
+  gap: 0.5rem;
+  animation: entrar-hito 0.7s var(--salida) calc(var(--orden, 0) * 90ms) both;
+}
+
+.hito::before {
+  content: "";
+  position: absolute;
+  left: -1.5625rem;
+  top: 0.375rem;
+  width: 0.6875rem;
+  height: 0.6875rem;
+  border-radius: 50%;
+  background-color: var(--tono);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--tono) 20%, transparent),
+    0 0 14px 2px color-mix(in srgb, var(--tono) 45%, transparent);
+}
+
+@keyframes entrar-hito {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+    filter: blur(5px);
+  }
+}
+
+/* La cabeza del cometa del menú, debajo de la pestaña elegida del panel: viaja a la que se toca */
+.cometa-pestana {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background-color: var(--texto);
+  box-shadow:
+    0 0 4px 1px var(--secundario),
+    0 0 12px 3px color-mix(in srgb, var(--secundario) 55%, transparent);
+  pointer-events: none;
+  transition:
+    left 0.6s var(--salida),
+    top 0.6s var(--salida);
+}
+
+/*
+ * El login (`SunriseScene`): el sol de Inicio saliendo por abajo. --diametro-sol es el del disco y
+ * --asoma, cuánto se ve de él. El disco ocupa el 74% de la caja de `Sun` (`SOL.radio`, en astros.ts)
+ */
+.amanecer {
+  --diametro-sol: clamp(35rem, 42vw, 48.75rem);
+  --asoma: 18dvh;
+}
+
+@media (width >= 48rem) {
+  .amanecer {
+    --asoma: min(21dvh, 14rem);
+  }
+}
+
+/* En una pantalla baja, como una laptop, asoma menos: el formulario entra entero arriba del disco */
+@media (height < 43.75rem) {
+  .amanecer {
+    --asoma: 15dvh;
+  }
+}
+
+.sol-amanecer {
+  position: absolute;
+  left: 50%;
+  top: calc(100% - var(--asoma) + var(--diametro-sol) / 2);
+  width: calc(var(--diametro-sol) / 0.74);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+/* La luz del sol, más ceñida que en Inicio: si no, apagaría el formulario */
+.sol-amanecer .sol::before {
+  inset: -45%;
+}
+
+/* El cielo se tiñe desde abajo: el color del sol y un poco de rosa, que se pierden hacia arriba */
+.tinte-amanecer {
+  position: absolute;
+  inset: auto 0 0;
+  height: 70%;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--aviso) 18%, transparent),
+    color-mix(in srgb, var(--rosa) 7%, transparent) 45%,
+    transparent
+  );
+}
+
+/* Lo del login entra de a uno, desde un brillo desenfocado: arriba, el saludo y el formulario */
+.entra-amanecer {
+  animation: amanecer-entrar 1.1s var(--salida) calc(var(--orden, 0) * 150ms) both;
+}
+
+@keyframes amanecer-entrar {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+    filter: blur(6px);
+  }
 }
 
 /* Las tres líneas del menú, que se convierten en una X */
@@ -746,6 +1000,372 @@
 
 .icono-girando {
   animation: entrar-girando 0.55s var(--rebote);
+}
+
+/*
+ * El vidrio del blog: deja ver el espacio de atrás. El dueño eligió en la muestra 75% de
+ * transparencia y 2px de desenfoque. El fuerte es el del panel de lectura, que va encima del blog
+ */
+.rr-dev {
+  --vidrio: color-mix(in srgb, var(--superficie) 25%, transparent);
+  --vidrio-fuerte: color-mix(in srgb, var(--superficie) 57%, transparent);
+  --vidrio-desenfoque: 2px;
+  --vidrio-filo: color-mix(in srgb, var(--texto) 10%, transparent);
+}
+
+.vidrio {
+  border: 1px solid var(--vidrio-filo);
+  background-color: var(--vidrio);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--texto) 7%, transparent),
+    0 24px 48px -28px color-mix(in srgb, var(--sombra) 75%, transparent);
+  -webkit-backdrop-filter: blur(var(--vidrio-desenfoque)) saturate(1.5);
+  backdrop-filter: blur(var(--vidrio-desenfoque)) saturate(1.5);
+}
+
+.vidrio-fuerte {
+  background-color: var(--vidrio-fuerte);
+  -webkit-backdrop-filter: blur(calc(var(--vidrio-desenfoque) + 14px)) saturate(1.5);
+  backdrop-filter: blur(calc(var(--vidrio-desenfoque) + 14px)) saturate(1.5);
+}
+
+/*
+ * El blog mide lo que la pantalla, sin scroll: es un contenedor para que sus piezas se acomoden a ese
+ * alto (`cqh` es un centésimo de su alto). En una pantalla baja primero se van los temas y después
+ * se achica la foto, se esconde «Página 1 de 3» y quedan dos temas en el centro
+ */
+.escena-blog {
+  container: blog / size;
+}
+
+/* La foto del centro: en 16:9, alta como un tercio del blog, y nunca más ancha que su columna */
+.foco-foto {
+  width: min(100%, calc(34cqh * 16 / 9));
+}
+
+.foco-foto::before {
+  z-index: 1;
+}
+
+@container blog (max-height: 700px) {
+  .temas-blog {
+    display: none;
+  }
+}
+
+@container blog (max-height: 640px) {
+  .foco {
+    gap: 0.625rem;
+  }
+
+  .foco-foto {
+    width: min(100%, calc(28cqh * 16 / 9));
+  }
+
+  .foco-temas li:nth-child(n + 3),
+  .paginado-rotulo {
+    display: none;
+  }
+}
+
+/* El texto del blog pasa por encima de Saturno y sus anillos: una sombra del color del fondo lo despega */
+.sombra-texto {
+  text-shadow: 0 1px 14px color-mix(in srgb, var(--fondo) 85%, transparent);
+}
+
+/*
+ * Sobre mí mide lo que la pantalla, sin scroll, como el blog: es un contenedor para que sus piezas
+ * se acomoden a ese alto (`cqh`). En una pantalla baja, como una laptop, se va la disponibilidad
+ */
+.escena-sobre-mi {
+  container: sobre-mi / size;
+}
+
+@container sobre-mi (max-height: 640px) {
+  .estado-sobre-mi {
+    display: none;
+  }
+}
+
+/* Las constelaciones lejanas van en el hueco de debajo de las de cerca: en una pantalla baja no hay hueco */
+@container sobre-mi (max-height: 760px) {
+  .constelacion-lejana {
+    display: none;
+  }
+}
+
+/*
+ * Habilidades también mide lo que la pantalla, sin scroll. En el celular, en una pantalla baja, se va
+ * la frase, y en una más baja todavía, la cuenta: así entran todos los renglones
+ */
+.escena-habilidades {
+  container: habilidades / size;
+}
+
+@media (width < 80rem) {
+  @container habilidades (max-height: 600px) {
+    .frase-habilidades {
+      display: none;
+    }
+  }
+
+  @container habilidades (max-height: 560px) {
+    .cuenta-habilidades {
+      display: none;
+    }
+  }
+}
+
+/*
+ * Cada área de Habilidades tiñe su constelación con `--tono` (ver `tonoArea`): el borde y el anillo
+ * de las burbujas, el punto de su nombre y la tarjeta de cada habilidad
+ */
+.burbuja-habilidad {
+  border-color: color-mix(in srgb, var(--tono) 45%, var(--borde));
+}
+
+.burbuja-habilidad:hover {
+  border-color: color-mix(in srgb, var(--tono) 75%, transparent);
+  color: var(--tono);
+}
+
+.burbuja-habilidad.pulso-luz::after {
+  --color-pulso: color-mix(in srgb, var(--tono) 55%, transparent);
+}
+
+.punto-area {
+  background-color: var(--tono);
+  box-shadow: 0 0 8px var(--tono);
+}
+
+/* Un vidrio oscuro con el color del área: el nombre se lee sobre el cielo y sobre un planeta */
+.tarjeta-habilidad {
+  border: 1px solid color-mix(in srgb, var(--tono) 45%, transparent);
+  background-color: color-mix(in srgb, var(--tono) 18%, color-mix(in srgb, var(--superficie) 82%, transparent));
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  text-shadow: none;
+}
+
+/*
+ * Proyectos también mide lo que la pantalla, sin scroll. En una pantalla baja el resumen de la ficha
+ * abierta queda en dos renglones, y los nombres de las tecnologías se van (siguen en el panel). En el
+ * celular el resumen va en dos renglones antes; en una pantalla baja se van las burbujas, y en una más
+ * baja todavía, la cuenta y, con paginado (`.con-paginas`), la frase. Con paginado, en el celular no
+ * va el rótulo «Página 1 de 3»
+ */
+.escena-proyectos {
+  container: proyectos / size;
+}
+
+@container proyectos (max-height: 700px) {
+  .nombres-proyecto {
+    display: none;
+  }
+}
+
+@container proyectos (max-height: 640px) {
+  .resumen-proyecto {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
+@media (width < 48rem) {
+  @container proyectos (max-height: 760px) {
+    .resumen-proyecto {
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+  }
+
+  @container proyectos (max-height: 660px) {
+    .burbujas-proyecto {
+      display: none;
+    }
+  }
+
+  @container proyectos (max-height: 560px) {
+    .cuenta-proyectos,
+    .con-paginas .frase-proyectos {
+      display: none;
+    }
+  }
+
+  /* El rótulo del paginado cae encima de Marte y no se lee */
+  .con-paginas .paginado-rotulo {
+    display: none;
+  }
+}
+
+/*
+ * Contacto también mide lo que la pantalla, sin scroll. En el celular, en una pantalla baja se va
+ * «Abierto a», y en una más baja todavía, el mensaje
+ */
+.escena-contacto {
+  container: contacto / size;
+}
+
+@media (width < 48rem) {
+  @container contacto (max-height: 620px) {
+    .abierto-contacto {
+      display: none;
+    }
+  }
+
+  @container contacto (max-height: 540px) {
+    .frase-contacto {
+      display: none;
+    }
+  }
+}
+
+/*
+ * Las fichas de Proyectos y Contacto (`FoldRow`): la abierta lleva una píldora de vidrio de su color y
+ * la flecha girada. El cuerpo se abre despacio: la fila crece de 0 a su alto y lo de adentro aparece cuando ya
+ * hay lugar. Al cerrarse, primero se apaga y después se achica. El recorte deja pasar 1 rem para que
+ * no se corten el anillo de luz de las burbujas ni el vidrio de lo que cae encima de un planeta
+ */
+.ficha .cabeza-ficha {
+  transition:
+    background-color 0.6s var(--salida),
+    border-color 0.6s var(--salida);
+}
+
+.ficha[data-abierta] .cabeza-ficha {
+  border-color: color-mix(in srgb, var(--tono) 45%, transparent);
+  background-color: color-mix(in srgb, var(--tono) 14%, color-mix(in srgb, var(--superficie) 70%, transparent));
+}
+
+.ficha .flecha-ficha {
+  transition:
+    rotate 0.7s var(--salida),
+    color 0.4s;
+}
+
+.ficha[data-abierta] .flecha-ficha {
+  rotate: 90deg;
+  color: var(--tono);
+}
+
+.cuerpo-ficha {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.7s var(--salida);
+}
+
+.ficha[data-abierta] .cuerpo-ficha {
+  grid-template-rows: 1fr;
+}
+
+.recorte-ficha {
+  min-height: 0;
+  overflow: clip;
+  overflow-clip-margin: 1rem;
+}
+
+.interior-ficha {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease,
+    visibility 0s 0.7s;
+}
+
+.ficha[data-abierta] .interior-ficha {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.6s ease 0.2s,
+    visibility 0s;
+}
+
+/* El anillo del emblema de un proyecto o de una forma de contacto: la luz que gira en la foto de Inicio, de su color */
+.anillo-proyecto,
+.anillo-ficha {
+  --resto: color-mix(in srgb, var(--tono) 30%, transparent);
+  background: conic-gradient(from var(--angulo), var(--resto) 0deg 250deg, var(--tono) 300deg, var(--resto) 345deg);
+  box-shadow: 0 0 30px -8px var(--tono);
+  animation: girar 6s linear infinite;
+}
+
+/*
+ * Lo que cae encima del planeta de cerca se apoya en un vidrio oscuro: el texto blanco no se lee sobre
+ * un planeta claro. `useSobrePlaneta` marca esas piezas con `data-sobre-planeta`. El vidrio va por
+ * detrás de la pieza y un poco más grande, así no la mueve
+ */
+.rr-dev [data-respaldo][data-sobre-planeta] {
+  position: relative;
+  isolation: isolate;
+}
+
+.rr-dev [data-respaldo][data-sobre-planeta]::before {
+  content: "";
+  position: absolute;
+  inset: -6px -12px;
+  z-index: -1;
+  border: 1px solid var(--vidrio-filo);
+  border-radius: 14px;
+  background-color: color-mix(in srgb, var(--superficie) 80%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  backdrop-filter: blur(16px) saturate(1.5);
+}
+
+/*
+ * La fila de una ficha de Proyectos ya es una píldora: el vidrio va en su propio fondo, no detrás
+ * (taparía el color de la abierta, que se pinta debajo de lo que va detrás)
+ */
+.rr-dev .cabeza-ficha[data-respaldo][data-sobre-planeta]::before {
+  display: none;
+}
+
+.rr-dev .cabeza-ficha[data-sobre-planeta] {
+  border-color: var(--vidrio-filo);
+  background-color: color-mix(in srgb, var(--superficie) 80%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  backdrop-filter: blur(16px) saturate(1.5);
+}
+
+.rr-dev .ficha[data-abierta] .cabeza-ficha[data-sobre-planeta] {
+  border-color: color-mix(in srgb, var(--tono) 45%, transparent);
+  background-color: color-mix(in srgb, var(--tono) 16%, color-mix(in srgb, var(--superficie) 85%, transparent));
+}
+
+/*
+ * Al elegir otra publicación del blog, sus piezas aparecen de a una, sin estrellas: más corto que el
+ * encendido de entrada. `--orden` es el lugar de cada pieza
+ */
+.cambio-suave {
+  animation: cambiar 1s var(--salida) calc(var(--orden, 0) * 120ms) backwards;
+}
+
+@keyframes cambiar {
+  from {
+    opacity: 0;
+    filter: brightness(1.8) blur(4px);
+  }
+}
+
+/* El panel de lectura entra por la derecha, sobre un velo que aparece */
+.entrada-lector {
+  animation: entrar-de-costado 0.45s var(--salida);
+}
+
+.aparecer {
+  animation: aparecer 0.3s ease-out;
+}
+
+@keyframes entrar-de-costado {
+  from {
+    opacity: 0;
+    translate: 40px 0;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

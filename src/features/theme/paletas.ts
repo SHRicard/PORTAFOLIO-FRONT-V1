@@ -1,6 +1,9 @@
 import type { ThemeVars } from "./themeTypes";
 
-/** Todo lo que define una paleta. Los colores no se eligen sueltos: se elige el pack completo. */
+/**
+ * Todo lo que define una paleta. Los colores no se eligen sueltos: se elige el pack completo.
+ * Los portafolios usan este mismo formato para los modos de su tema (`src/vistas/<id>/tema.ts`)
+ */
 export type ColoresPaleta = Pick<
   ThemeVars,
   | "primario"
@@ -28,8 +31,8 @@ export interface Paleta {
 }
 
 /**
- * Para sumar una paleta: agregarla a esta lista. La primera es la de por defecto, y sus
- * valores tienen que coincidir con :root en src/index.css.
+ * Las paletas DEL PANEL (Apariencia): no cambian la web pública, cuyos portafolios tienen las suyas.
+ * Para sumar una: agregarla a esta lista. La primera es la de por defecto.
  * `secundario` y `texto` tienen que leerse bien sobre `fondo` y `superficie` (WCAG AA), y
  * `peligro` también sobre su propio tinte: las alertas y etiquetas usan `bg-peligro/10`.
  */

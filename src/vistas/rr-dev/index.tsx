@@ -7,6 +7,9 @@ import InicioPage from "@/vistas/rr-dev/pages/InicioPage";
 import ProyectosPage from "@/vistas/rr-dev/pages/ProyectosPage";
 import SobreMiPage from "@/vistas/rr-dev/pages/SobreMiPage";
 import type { Vista } from "@/vistas/types";
+import celular from "./capturas/celular.webp";
+import { tema } from "./tema";
+import escritorio from "./capturas/escritorio.webp";
 import "./estilos.css";
 
 function Miniatura() {
@@ -25,12 +28,14 @@ function Miniatura() {
   );
 }
 
-/** El primer diseño del portafolio, traído del proyecto RR-DEV */
+/** El primer diseño del portafolio, mi.universo, traído del proyecto RR-DEV */
 export const rrDev: Vista = {
   id: "rr-dev",
-  nombre: "RR-DEV",
+  nombre: "mi.universo",
   descripcion: "Mi primer diseño, con la isla flotante de navegación.",
   Miniatura,
+  capturas: { escritorio, celular },
+  tema,
   Encabezado: IslandNavbar,
   // El espacio con el sol y los planetas: la cámara viaja de un apartado al otro
   Fondo: SpaceScene,
@@ -39,8 +44,13 @@ export const rrDev: Vista = {
     { ruta: "sobre-mi", Pagina: SobreMiPage },
     { ruta: "habilidades", Pagina: HabilidadesPage },
     { ruta: "proyectos", Pagina: ProyectosPage },
+    // Un proyecto se ve en su panel, encima de Proyectos: /proyectos/:slug muestra la lista con él abierto
+    // (es a donde lleva «Ver en la web» del panel de administración)
+    { ruta: "proyectos/:slug", Pagina: ProyectosPage },
     { ruta: "contacto", Pagina: ContactoPage },
-    // En lugar de la lista del blog: sus publicaciones tapaban el espacio
+    // El blog como la constelación de Inicio, sin scroll. Una publicación se abre en un panel
+    // encima: /blog/:slug muestra el mismo blog con ella abierta
     { ruta: "blog", Pagina: BlogPage },
+    { ruta: "blog/:slug", Pagina: BlogPage },
   ],
 };

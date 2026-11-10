@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeStore } from "@/app/store";
 import { sessionStarted } from "@/features/auth/authActions";
 import { estudiosApi } from "./estudiosApi";
-import { aEstudioInput, aFormulario, ESTUDIO_VACIO, estudioSchema } from "./schemas";
+import { aEstudioInput, aFormulario, ESTUDIO_VACIO, estudioSchema, queFalta } from "./schemas";
 import type { Estudio } from "./types";
 
 const estudio: Estudio = {
@@ -57,6 +57,23 @@ describe("formulario de estudios", () => {
 
   it("la fecha de fin no puede ser anterior a la de inicio", () => {
     expect(estudioSchema.safeParse({ ...valido, hasta: "2021-01" }).success).toBe(false);
+  });
+
+  it("acepta un certificado elegido que todavía no se subió (URL local)", () => {
+    expect(estudioSchema.safeParse({ ...valido, certificadoUrl: "blob:http://localhost/1" }).success).toBe(true);
+    expect(estudioSchema.safeParse({ ...valido, certificadoUrl: "http://x.com/c.pdf" }).success).toBe(false);
+  });
+});
+
+describe("lo que le falta a un estudio", () => {
+  it("la descripción y el certificado sin subir; sin certificado no falta nada", () => {
+    expect(queFalta(estudio)).toBe("Falta la descripción");
+    expect(queFalta({ descripcion: "D", certificado: { url: null } })).toBe("Falta subir el certificado");
+    expect(queFalta({ descripcion: " ", certificado: { url: null } })).toBe(
+      "Falta la descripción y subir el certificado",
+    );
+    expect(queFalta({ descripcion: "D", certificado: null })).toBeNull();
+    expect(queFalta({ descripcion: "D", certificado: { url: "https://res.cloudinary.com/x/c.pdf" } })).toBeNull();
   });
 });
 

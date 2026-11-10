@@ -26,9 +26,9 @@ const LISTA_DE_FUENTES = cn(
 );
 
 /**
- * Pantalla PROVISORIA para probar el sistema de tema en vivo.
- * Cuando exista el servicio de preferencias del backend, estos controles se conectan a él
- * (para guardar) y las opciones salen de su endpoint de opciones.
+ * Apariencia del panel: colores, navegación y tipografía cambian SOLO el panel (y el login), y
+ * todavía no se guardan. Lo único que toca la web pública es «Vista web pública», que elige qué
+ * portafolio se ve y sí se guarda en el backend. Los colores de cada portafolio están en su tema.ts
  */
 export default function ThemePage() {
   const dispatch = useAppDispatch();
@@ -43,10 +43,13 @@ export default function ThemePage() {
     <div className="space-y-8">
       <div>
         <Title>Apariencia</Title>
-        <Subtitle className="mt-1 text-base">Probá cómo cambia toda la app en vivo.</Subtitle>
+        <Subtitle className="mt-1 text-base">Así se ve tu panel. Tus portafolios tienen su propio diseño.</Subtitle>
       </div>
 
-      <Alert>Provisorio: los cambios no se guardan todavía. Al recargar vuelve la apariencia por defecto.</Alert>
+      <Alert>
+        Provisorio: los colores, la navegación y la tipografía del panel no se guardan todavía. Al recargar vuelve la
+        apariencia por defecto. La vista web pública sí se guarda.
+      </Alert>
 
       <Card>
         <SelectorPaleta />
@@ -61,6 +64,7 @@ export default function ThemePage() {
           <label className="block space-y-1.5 text-sm font-medium text-texto">
             Tipografía
             <Select
+              flecha={false}
               value={vars.fuenteTitulo}
               className={LISTA_DE_FUENTES}
               style={{ fontFamily: vars.fuenteTitulo }}
@@ -87,7 +91,7 @@ export default function ThemePage() {
             </Title>
             <Subtitle>Un subtítulo corto que acompaña al título</Subtitle>
             <p className="text-texto">
-              Así se lee un párrafo en tu portafolio: la historia de un proyecto, qué problema resolvió y cómo lo
+              Así se lee un párrafo en tu panel: la historia de un proyecto, qué problema resolvió y cómo lo
               construiste.
             </p>
             <p className="pt-2 text-xs text-texto-suave">

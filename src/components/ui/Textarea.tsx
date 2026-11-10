@@ -1,23 +1,39 @@
 import type { TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
+import { cajaVariants, CONTROL_CON_ETIQUETA, EtiquetaFlotante, useEtiquetaFlotante } from "./CajaCampo";
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   invalid?: boolean;
 }
 
-/** Con React Hook Form: <Textarea {...register("campo")} /> */
-export function Textarea({ className, invalid, rows = 4, ...props }: TextareaProps) {
+/**
+ * Texto largo. Dentro de un <Field> lleva su etiqueta adentro, arriba a la izquierda.
+ * Con React Hook Form: <Textarea {...register("campo")} />. className va al <textarea>
+ */
+export function Textarea({ className, invalid, rows = 4, id, placeholder, ...props }: TextareaProps) {
+  const etiqueta = useEtiquetaFlotante(id);
+  const conError = !!invalid;
+
   return (
-    <textarea
-      rows={rows}
-      aria-invalid={invalid || undefined}
-      className={cn(
-        "w-full rounded-boton border bg-fondo px-3 py-2 text-sm text-texto outline-none transition-colors",
-        "placeholder:text-texto-suave focus:border-primario focus:ring-2 focus:ring-primario/20",
-        invalid ? "border-peligro" : "border-borde",
-        className,
+    <div className={cajaVariants({ tamano: "libre", conError })}>
+      <textarea
+        id={id}
+        rows={rows}
+        placeholder={etiqueta ? placeholder || " " : placeholder}
+        aria-invalid={invalid || undefined}
+        className={cn(
+          "peer w-full resize-y bg-transparent px-3.75 text-sm leading-relaxed text-texto outline-none placeholder:text-texto-suave",
+          etiqueta ? cn(CONTROL_CON_ETIQUETA, "pt-7 pb-2.5") : "py-2.5",
+          "disabled:cursor-not-allowed",
+          className,
+        )}
+        {...props}
+      />
+      {etiqueta && (
+        <EtiquetaFlotante htmlFor={id} reposa="arriba" conIcono={false} conError={conError}>
+          {etiqueta}
+        </EtiquetaFlotante>
       )}
-      {...props}
-    />
+    </div>
   );
 }

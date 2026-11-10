@@ -45,7 +45,7 @@ function MuestraPaleta({ colores }: { colores: ColoresPaleta }) {
   );
 }
 
-/** Elegir el pack de colores: siempre hay uno elegido y cambia toda la app al instante. */
+/** Elegir el pack de colores del panel: siempre hay uno elegido y cambia el panel al instante. La web pública tiene los suyos */
 export function SelectorPaleta() {
   const dispatch = useAppDispatch();
   const paleta = useAppSelector((state) => state.theme.paleta);
@@ -53,8 +53,10 @@ export function SelectorPaleta() {
   return (
     <fieldset className="space-y-4">
       <div>
-        <legend className="font-subtitulo text-lg font-semibold text-texto">Colores de app</legend>
-        <p className="mt-1 text-sm text-texto-suave">Elegí un pack de colores. Se aplica a toda la app al instante.</p>
+        <legend className="font-subtitulo text-lg font-semibold text-texto">Colores del panel</legend>
+        <p className="mt-1 text-sm text-texto-suave">
+          Elegí un pack de colores para el panel. Tus portafolios tienen los suyos.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

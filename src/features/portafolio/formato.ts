@@ -5,7 +5,6 @@ import type {
   FechaMes,
   Modalidad,
   NivelIdioma,
-  TiendaApp,
   TipoDatoCurioso,
   TipoEstudio,
   TipoProyecto,
@@ -18,6 +17,23 @@ const MESES = ["ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "
 export function mes(fecha: FechaMes): string {
   const [anio, numero] = fecha.split("-");
   return `${MESES[Number(numero) - 1] ?? numero} ${anio}`;
+}
+
+/**
+ * Lo que va en lugar de la portada de un proyecto que no tiene: la sigla del título, si tiene una
+ * (Facturación FCT da FCT), o las iniciales de sus dos primeras palabras largas (Panel de Flota da PF).
+ * La usan el emblema de mi.universo y la lista del panel
+ */
+export function iniciales(titulo: string): string {
+  const palabras = titulo.trim().split(/\s+/).filter(Boolean);
+  const sigla = palabras.find((palabra) => /^[A-ZÁÉÍÓÚÑ]{2,4}$/.test(palabra));
+  if (sigla) return sigla;
+  const largas = palabras.filter((palabra) => palabra.length > 2);
+  return (largas.length > 0 ? largas : palabras)
+    .slice(0, 2)
+    .map((palabra) => palabra[0])
+    .join("")
+    .toLocaleUpperCase("es");
 }
 
 /** "nov. 2022 – actualidad" · "mar. 2020 – mar. 2021" */
@@ -92,8 +108,6 @@ export const RED: Record<TipoRed, string> = {
   sitio: "Sitio web",
   otra: "Otro enlace",
 };
-
-export const TIENDA: Record<TiendaApp, string> = { playStore: "Google Play", appStore: "App Store" };
 
 export const TIPO_PROYECTO: Record<TipoProyecto, string> = {
   personal: "Proyecto personal",

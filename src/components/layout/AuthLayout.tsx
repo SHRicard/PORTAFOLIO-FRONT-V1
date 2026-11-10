@@ -1,15 +1,18 @@
-import { Link, Outlet } from "react-router";
-import { Card } from "@/components/ui/Card";
+import { Outlet } from "react-router";
+import { useAppSelector } from "@/app/hooks";
+import { useAplicarTema } from "@/features/theme/useAplicarTema";
+import { SunriseScene } from "@/vistas/rr-dev/components/organisms/SunriseScene";
 
+/**
+ * La pantalla del login: el amanecer de la vista RR-DEV, con el formulario al centro. Es una sola
+ * para toda la app: se ve así aunque la web pública use otra vista. Lleva el tema del panel
+ */
 export function AuthLayout() {
+  useAplicarTema(useAppSelector((state) => state.theme.vars));
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 py-10">
-      <Card tipo="sombra" className="w-full max-w-md">
-        <Outlet />
-      </Card>
-      <Link to="/" className="text-sm text-texto-suave hover:text-texto">
-        ← Volver al inicio
-      </Link>
-    </div>
+    <SunriseScene>
+      <Outlet />
+    </SunriseScene>
   );
 }

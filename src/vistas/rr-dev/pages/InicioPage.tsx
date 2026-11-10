@@ -31,7 +31,7 @@ const SALTEADO = [1, 3, 5, 0, 2, 4];
 export default function InicioPage() {
   const { data: perfil } = useGetPerfilQuery();
   const { data: experiencia } = useGetExperienciaQuery();
-  const redes = perfil?.redes ?? [];
+  const redes = perfil?.contacto.redes ?? [];
 
   return (
     <SectionReveal>

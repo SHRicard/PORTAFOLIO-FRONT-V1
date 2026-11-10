@@ -1,18 +1,24 @@
 @import "tailwindcss";
 
 /*
+ * Para la etiqueta flotante de los campos del panel (components/ui/CajaCampo.tsx): el control
+ * (la «peer») está vacío y sin foco, así que su etiqueta descansa adentro de la caja
+ */
+@custom-variant campo-vacio (:where(.peer):placeholder-shown:not(:focus) ~ &);
+
+/*
  * SISTEMA DE TEMA
  * ---------------
  * Los colores, fuentes, radios y sombras NO están fijos en los componentes: salen de
- * estas variables CSS. El panel (más adelante, desde las preferencias del usuario) las
- * cambia en vivo con applyTheme() y toda la app se actualiza sin recargar.
+ * estas variables CSS. Cada layout escribe las de SU tema con useAplicarTema(): la web
+ * pública, las del portafolio en pantalla (src/vistas/<id>/tema.ts); el panel y el login,
+ * las del panel (Apariencia). Así toda la pantalla cambia sin recargar.
  *
- * Variables "base": las que se eligen. Los colores vienen de la paleta (ver
- * src/features/theme/paletas.ts) y el resto del tema, de defaultTheme.ts.
- * Variables derivadas: se calculan solas a partir de las base.
+ * Variables "base": las que se eligen. Variables derivadas: se calculan solas a partir de las base.
  */
 :root {
-  /* base: la paleta por defecto de src/features/theme/paletas.ts (applyTheme() las pisa) */
+  /* base: lo que se ve antes de que cargue JavaScript. Es el modo por defecto del portafolio por
+     defecto (mi.universo, Negro y violeta), porque la primera visita suele ser a la web pública */
   --primario: #6c5ce7;
   --primario-texto: #ffffff;
   --primario-oscuro: #4b3fd8;
@@ -38,8 +44,15 @@
   --radio-card: 0.75rem;
   --radio-boton: 0.5rem;
   --sombra-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
 
-  /* derivadas: se adaptan solas a la paleta */
+/*
+ * Derivadas: se adaptan solas a la paleta. Van también en .tema (un contenedor con las variables
+ * de otro tema en su style, ver estiloDeTema.ts): una variable que usa var() se resuelve donde se
+ * declara, así que si estuvieran solo en :root, adentro seguirían con los colores de afuera.
+ */
+:root,
+.tema {
   --primario-hover: var(--secundario);
   --sombra-flotante: 0 10px 30px -8px color-mix(in srgb, var(--primario) 35%, transparent);
 
@@ -69,6 +82,7 @@
   --color-rosa: var(--rosa);
   --color-peligro: var(--peligro);
   --color-peligro-texto: var(--peligro-texto);
+  --color-sombra: var(--sombra);
 
   --font-titulo: var(--fuente-titulo);
   --font-subtitulo: var(--fuente-subtitulo);
@@ -79,6 +93,22 @@
 
   --shadow-card: var(--sombra-card);
   --shadow-flotante: var(--sombra-flotante);
+}
+
+/* La vidriera del Inicio del panel: el portafolio aplicado entra desde un brillo desenfocado */
+@keyframes entrar-vidriera {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    translate: 0 8px;
+  }
+}
+
+/* Con el modal de confirmación abierto (useConfirmar), la página de atrás no se desliza. Queda el hueco
+   de la barra de desplazamiento, así nada salta */
+html:has(dialog:modal) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Ancho del contenido: siempre el 90% del espacio disponible. Lo usan los layouts. */

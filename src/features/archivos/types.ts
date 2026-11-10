@@ -1,16 +1,14 @@
 /** Tipos del servicio de archivos. Fuente: docs/api/ARCHIVOS.md */
 
-export type TipoArchivo = "imagen" | "documento" | "apk";
+export type TipoArchivo = "imagen" | "documento";
 
 /** Lo que devuelve POST /archivos/firma */
 export interface FirmaSubida {
   urlSubida: string;
-  /** Se mandan tal cual a Cloudinary o a S3, junto con el archivo */
+  /** Se mandan tal cual a Cloudinary, junto con el archivo */
   campos: Record<string, string | number>;
   formatos: string[];
   maxBytes: number;
-  /** Solo en los APK, que van a S3: dónde va a quedar. S3 no responde nada al subir */
-  destino?: { publicId: string; url: string };
 }
 
 export interface Archivo {
@@ -52,6 +50,6 @@ export interface RespuestaCloudinary {
 export interface SubirArchivoInput {
   archivo: File;
   tipo: TipoArchivo;
-  /** Subcarpeta, ej. "proyectos/facturacion-fct" o "apk/facturacion-fct" */
+  /** Subcarpeta, ej. "proyectos/facturacion-fct" */
   carpeta?: string;
 }

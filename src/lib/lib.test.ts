@@ -3,7 +3,7 @@ import { applyServerFieldErrors } from "./forms";
 import { todasLasPaginas } from "./paginacion";
 import { safeRedirectPath } from "./redirect";
 import { carpetaDe } from "./validaciones";
-import { loginSchema, registerSchema } from "@/features/auth/schemas";
+import { loginSchema, profileSchema } from "@/features/auth/schemas";
 
 describe("carpetaDe", () => {
   it("sale del slug o, si no hay, del título con el mismo criterio que el backend", () => {
@@ -92,15 +92,13 @@ describe("safeRedirectPath", () => {
 });
 
 describe("validaciones de formularios", () => {
-  const registroValido = {
+  const perfilValido = {
     nombre: "Ana",
     apellido: "Pérez",
     telefono: "+54 11 5555-1234",
     pais: "Argentina",
     correo: " ana@mail.com ",
     sexo: "femenino",
-    password: "miclave123",
-    confirmarPassword: "miclave123",
   };
 
   it("login: pide correo válido y contraseña", () => {
@@ -109,19 +107,14 @@ describe("validaciones de formularios", () => {
     expect(loginSchema.safeParse({ correo: "ana@mail.com", password: "" }).success).toBe(false);
   });
 
-  it("registro: acepta datos válidos y limpia espacios del correo", () => {
-    const result = registerSchema.safeParse(registroValido);
+  it("perfil de la cuenta: acepta datos válidos y limpia espacios del correo", () => {
+    const result = profileSchema.safeParse(perfilValido);
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.correo).toBe("ana@mail.com");
   });
 
-  it("registro: rechaza contraseñas cortas o que no coinciden", () => {
-    expect(registerSchema.safeParse({ ...registroValido, password: "corta", confirmarPassword: "corta" }).success).toBe(false);
-    expect(registerSchema.safeParse({ ...registroValido, confirmarPassword: "otra-distinta" }).success).toBe(false);
-  });
-
-  it("registro: rechaza sexo fuera de la lista y teléfono inválido", () => {
-    expect(registerSchema.safeParse({ ...registroValido, sexo: "x" }).success).toBe(false);
-    expect(registerSchema.safeParse({ ...registroValido, telefono: "abc" }).success).toBe(false);
+  it("perfil de la cuenta: rechaza sexo fuera de la lista y teléfono inválido", () => {
+    expect(profileSchema.safeParse({ ...perfilValido, sexo: "x" }).success).toBe(false);
+    expect(profileSchema.safeParse({ ...perfilValido, telefono: "abc" }).success).toBe(false);
   });
 });

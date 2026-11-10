@@ -1,10 +1,21 @@
 import { z } from "zod";
+import { enumerar } from "@/lib/queFalta";
 import { aLineas, fechaMes, fechaMesOpcional, lineas, texto, textoOpcional, vacioANull } from "@/lib/validaciones";
 import type { CrearExperienciaInput, Experiencia, Modalidad } from "./types";
 
 /** Validaciones del formulario. Reflejan las reglas del backend (docs/api/EXPERIENCIA.md) */
 
 export const MODALIDADES = ["remoto", "hibrido", "presencial"] as const satisfies readonly Modalidad[];
+
+/** Los campos que el backend puede rechazar y el formulario sabe marcar */
+export const CAMPOS = ["empresa", "puesto", "desde", "hasta", "ubicacion", "modalidad", "descripcion"] as const;
+
+/** Si se ve en la web o no: el badge de la lista y de la barra del formulario */
+export const ESTADO_TRABAJO = {
+  publicado: { etiqueta: "Publicado", estilo: "primario" },
+  oculto: { etiqueta: "Oculto", estilo: "peligro" },
+} as const;
+export const estadoDe = (publicado: boolean) => ESTADO_TRABAJO[publicado ? "publicado" : "oculto"];
 
 export const experienciaSchema = z
   .object({
@@ -62,4 +73,18 @@ export function aExperienciaInput(v: ExperienciaFormValues): CrearExperienciaInp
     logros: aLineas(v.logros),
     tecnologias: aLineas(v.tecnologias),
   };
+}
+
+/**
+ * Lo que le falta a un trabajo para estar completo, en una línea (la lista y la vista previa del formulario), o
+ * null si no le falta nada: «Falta la descripción», «Faltan los logros y las tecnologías»
+ */
+export function queFalta(trabajo: Pick<Experiencia, "descripcion" | "logros" | "tecnologias">): string | null {
+  const faltan = [
+    ...(trabajo.descripcion.trim() ? [] : ["la descripción"]),
+    ...(trabajo.logros.length > 0 ? [] : ["los logros"]),
+    ...(trabajo.tecnologias.length > 0 ? [] : ["las tecnologías"]),
+  ];
+  if (faltan.length === 0) return null;
+  return `${faltan.length === 1 && faltan[0] === "la descripción" ? "Falta" : "Faltan"} ${enumerar(faltan)}`;
 }

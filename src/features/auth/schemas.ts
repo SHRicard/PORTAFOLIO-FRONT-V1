@@ -34,19 +34,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "La contraseña es obligatoria"),
 });
 
-export const registerSchema = z
-  .object({
-    ...perfil,
-    password: z.string().min(8, "Mínimo 8 caracteres").max(72, "Máximo 72 caracteres"),
-    confirmarPassword: z.string().min(1, "Repetí la contraseña"),
-  })
-  .refine((d) => d.password === d.confirmarPassword, {
-    message: "Las contraseñas no coinciden",
-    path: ["confirmarPassword"],
-  });
-
 export const profileSchema = z.object(perfil);
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
-export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ProfileFormValues = z.infer<typeof profileSchema>;

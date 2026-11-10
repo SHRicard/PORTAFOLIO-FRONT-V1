@@ -1,4 +1,4 @@
-/** Tipos de la lectura pública del portafolio. Fuente: docs/api/IMPLEMENTACION_ME.md */
+/** Tipos de la lectura pública del portafolio. Fuente: docs/api/IMPLEMENTACION_ME.md y, el contacto, docs/api/PERFIL.md */
 
 export type Modalidad = "remoto" | "hibrido" | "presencial";
 export type TipoRed = "github" | "linkedin" | "behance" | "dribbble" | "instagram" | "x" | "youtube" | "sitio" | "otra";
@@ -6,7 +6,6 @@ export type CategoriaHabilidad = "front" | "back" | "mobile" | "base-de-datos" |
 export type NivelIdioma = "basico" | "intermedio" | "avanzado" | "nativo";
 export type TipoDatoCurioso = "profesional" | "personal";
 export type TipoProyecto = "personal" | "freelance" | "empresa";
-export type TiendaApp = "playStore" | "appStore";
 export type TipoEstudio = "carrera" | "curso" | "certificacion";
 
 /** Mes en formato AAAA-MM, ej. "2024-07" */
@@ -23,8 +22,21 @@ export interface Perfil {
   bioCorta: string;
   /** Párrafos separados por una línea en blanco */
   bioLarga: string;
-  correoContacto: string;
-  redes: { tipo: TipoRed; url: string }[];
+  /** Siempre viene con todas las claves. Lo vacío ("", [] o null) no se muestra */
+  contacto: {
+    /** En minúsculas */
+    correo: string;
+    /** Formato internacional, con + y código de país. null = sin teléfono */
+    telefono: { numero: string; whatsapp: boolean } | null;
+    redes: { tipo: TipoRed; url: string }[];
+    mensaje: string;
+    /** Chips "Abierto a" */
+    abiertoA: string[];
+    tiempoRespuesta: string;
+    horario: string;
+    /** URL https para agendar una llamada. null = no hay */
+    agenda: string | null;
+  };
   habilidades: { nombre: string; categoria: CategoriaHabilidad }[];
   idiomas: { idioma: string; nivel: NivelIdioma }[];
   datosCuriosos: { titulo: string; valor: string; tipo: TipoDatoCurioso }[];
@@ -33,6 +45,8 @@ export interface Perfil {
   cv: { url: string } | null;
   createdAt: string;
   updatedAt: string;
+  /** Id (carpeta) del diseño que eligió el administrador, ej. "rr-dev". null = la vista por defecto */
+  vista: string | null;
 }
 
 export interface Proyecto {
@@ -46,16 +60,8 @@ export interface Proyecto {
   /** Párrafos separados por una línea en blanco */
   descripcion: string;
   tecnologias: string[];
-  enlaces: {
-    /** Puede venir null: mostrar solo si tiene valor */
-    demo: string | null;
-    /** true = mostrar "Pedí una demo por Meet" */
-    demoPorSolicitud: boolean;
-    repositorios: { nombre: string; url: string }[];
-    tiendas: { tienda: TiendaApp; app: string; url: string }[];
-    apkDemo: { url: string; nota: string } | null;
-  };
-  portada: { url: string; alt: string } | null;
+  repositorios: { nombre: string; url: string }[];
+  /** Solo las que ya tienen URL. La primera es la portada */
   galeria: { url: string; alt: string }[];
   documentos: { url: string; titulo: string }[];
   destacado: boolean;

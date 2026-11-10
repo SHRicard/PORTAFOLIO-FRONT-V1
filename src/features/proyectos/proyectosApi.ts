@@ -1,7 +1,13 @@
 import { todasLasPaginas } from "@/lib/paginacion";
 import { api } from "@/services/api";
 import type { ApiSuccess } from "@/types/api";
-import type { ActualizarProyectoInput, CrearProyectoInput, EstadoProyecto, Proyecto } from "./types";
+import type {
+  ActualizarProyectoInput,
+  CrearProyectoInput,
+  EstadoProyecto,
+  ImagenEliminada,
+  Proyecto,
+} from "./types";
 
 /**
  * Endpoints del panel (solo el administrador). Contrato: docs/api/PROYECTOS.md
@@ -45,6 +51,13 @@ export const proyectosApi = api.injectEndpoints({
       transformResponse: (res: ApiSuccess<{ id: string }>) => res.data.id,
       invalidatesTags: ["Proyecto"],
     }),
+
+    /** Saca una foto de la galería y la borra de Cloudinary y de la biblioteca. Definitivo */
+    eliminarImagenProyecto: build.mutation<ImagenEliminada, { id: string; url: string }>({
+      query: ({ id, url }) => ({ url: `/proyectos/${id}/galeria`, method: "DELETE", body: { url } }),
+      transformResponse: (res: ApiSuccess<ImagenEliminada>) => res.data,
+      invalidatesTags: ["Proyecto", "Archivo"],
+    }),
   }),
 });
 
@@ -55,4 +68,5 @@ export const {
   useActualizarProyectoMutation,
   useReordenarProyectosMutation,
   useEliminarProyectoMutation,
+  useEliminarImagenProyectoMutation,
 } = proyectosApi;

@@ -12,8 +12,8 @@ import { aEntradaInput, campoFormulario, type EntradaFormValues } from "@/featur
 import { getErrorDetail, getErrorMessage } from "@/lib/errors";
 import { applyServerFieldErrors } from "@/lib/forms";
 import { Alert } from "@/components/ui/Alert";
+import { buttonVariants } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
-import { Subtitle, Title } from "@/components/ui/Typography";
 
 /** Crea una entrada (/admin/blog/nuevo) o edita una existente (/admin/blog/:id) */
 export default function EntradaFormPage() {
@@ -37,19 +37,24 @@ export default function EntradaFormPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link to="/admin/blog" className="inline-flex items-center gap-1 text-sm text-texto-suave hover:text-texto">
-          <ArrowLeft className="size-4" aria-hidden />
-          Volver al blog
-        </Link>
-        <Title className="mt-2">{id ? "Editar entrada" : "Nueva entrada"}</Title>
-        <Subtitle className="mt-1 text-base">
-          {id ? entrada?.titulo : "Las entradas nuevas arrancan en borrador: elegí Publicada cuando esté lista."}
-        </Subtitle>
-      </div>
+    <div className="space-y-4">
+      {/* El nombre, el estado, «Volver» y «Guardar» van en la barra del formulario, como en proyectos */}
+      {!id && (
+        <p className="text-sm text-texto-suave">
+          Las entradas nuevas arrancan en borrador: elegí Publicada cuando esté lista.
+        </p>
+      )}
 
-      {error && <Alert tipo="error">{getErrorMessage(error)}</Alert>}
+      {/* Sin formulario (la entrada no existe), «Volver» queda solo, debajo del error */}
+      {error && (
+        <div className="space-y-4">
+          <Alert tipo="error">{getErrorMessage(error)}</Alert>
+          <Link to="/admin/blog" className={buttonVariants({ estilo: "peligro" })}>
+            <ArrowLeft className="size-4" aria-hidden />
+            Volver al blog
+          </Link>
+        </div>
+      )}
       {id && isLoading && <Spinner />}
 
       {(!id || entrada) && (
@@ -59,6 +64,7 @@ export default function EntradaFormPage() {
           errorGeneral={errorGeneral}
           textoGuardar={id ? "Guardar cambios" : "Crear entrada"}
           onGuardar={guardar}
+          volverA="/admin/blog"
         />
       )}
     </div>

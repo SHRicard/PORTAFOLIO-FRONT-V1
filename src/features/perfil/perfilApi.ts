@@ -1,3 +1,4 @@
+import { portafolioApi } from "@/features/portafolio/portafolioApi";
 import { api } from "@/services/api";
 import type { ApiSuccess } from "@/types/api";
 import type { GuardarPerfilInput, Perfil } from "./types";
@@ -20,7 +21,29 @@ export const perfilApi = api.injectEndpoints({
       transformResponse: (res: ApiSuccess<{ perfil: Perfil }>) => res.data.perfil,
       invalidatesTags: ["Perfil"],
     }),
+
+    /**
+     * Elige el diseño de la web pública para todos los visitantes. null = la vista por defecto.
+     * Con la respuesta, el perfil público ya muestra la nueva: no espera a que se vuelva a pedir
+     */
+    elegirVista: build.mutation<Perfil, string | null>({
+      query: (vista) => ({ url: "/perfil", method: "PATCH", body: { vista } }),
+      transformResponse: (res: ApiSuccess<{ perfil: Perfil }>) => res.data.perfil,
+      invalidatesTags: ["Perfil"], // refresca /perfil/admin y /perfil: la web cambia sola
+      async onQueryStarted(vista, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            portafolioApi.util.updateQueryData("getPerfil", undefined, (perfil) => {
+              perfil.vista = data.vista ?? vista;
+            }),
+          );
+        } catch {
+          // El error lo muestra quien eligió
+        }
+      },
+    }),
   }),
 });
 
-export const { useGetPerfilAdminQuery, useGuardarPerfilMutation } = perfilApi;
+export const { useGetPerfilAdminQuery, useGuardarPerfilMutation, useElegirVistaMutation } = perfilApi;

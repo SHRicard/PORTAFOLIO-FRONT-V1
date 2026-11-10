@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { aLineas, lineas, slugOpcional, texto, textoOpcional, urlOpcional, vacioANull } from "@/lib/validaciones";
+import { textoQueFalta } from "@/lib/queFalta";
+import { aLineas, lineas, texto, textoOpcional, urlOpcionalOArchivo, vacioANull } from "@/lib/validaciones";
 import type { CrearEntradaInput, Entrada, EntradaResumen, EstadoEntrada } from "./types";
 
 /**
@@ -12,6 +13,12 @@ export const ESTADOS_ENTRADA = ["borrador", "publicado"] as const satisfies read
 
 export const ESTADO_LABELS: Record<EstadoEntrada, string> = { borrador: "Borrador", publicado: "Publicada" };
 
+/** El color del badge de cada estado, en la lista y en la barra del formulario */
+export const ESTADO_ESTILO: Record<EstadoEntrada, "neutro" | "primario"> = {
+  borrador: "neutro",
+  publicado: "primario",
+};
+
 export const ESTADO_AYUDA: Record<EstadoEntrada, string> = {
   borrador: "Sin terminar: no se ve en la web",
   publicado: "Se ve en la web",
@@ -20,14 +27,16 @@ export const ESTADO_AYUDA: Record<EstadoEntrada, string> = {
 export const entradaSchema = z
   .object({
     titulo: texto(120),
-    slug: slugOpcional,
     resumen: texto(200),
     contenido: texto(20000),
     etiquetas: lineas(10, 30),
-    portadaUrl: urlOpcional,
+    // Una foto o un PDF elegido se sube al guardar: mientras tanto, el campo tiene su URL local
+    portadaUrl: urlOpcionalOArchivo,
     portadaAlt: textoOpcional(200),
-    galeria: z.array(z.object({ url: urlOpcional, alt: texto(200) })).max(20, "Máximo 20 imágenes en la galería"),
-    documentos: z.array(z.object({ url: urlOpcional, titulo: texto(120) })).max(10, "Máximo 10 documentos"),
+    galeria: z
+      .array(z.object({ url: urlOpcionalOArchivo, alt: texto(200) }))
+      .max(20, "Máximo 20 imágenes en la galería"),
+    documentos: z.array(z.object({ url: urlOpcionalOArchivo, titulo: texto(120) })).max(10, "Máximo 10 documentos"),
     estado: z.enum(ESTADOS_ENTRADA, { message: "Elegí una opción" }),
   })
   .refine((v) => !v.portadaUrl || v.portadaAlt, {
@@ -39,7 +48,6 @@ export type EntradaFormValues = z.infer<typeof entradaSchema>;
 
 export const ENTRADA_VACIA: EntradaFormValues = {
   titulo: "",
-  slug: "",
   resumen: "",
   contenido: "",
   etiquetas: "",
@@ -54,7 +62,6 @@ export const ENTRADA_VACIA: EntradaFormValues = {
 export function aFormulario(entrada: Entrada): EntradaFormValues {
   return {
     titulo: entrada.titulo,
-    slug: entrada.slug,
     resumen: entrada.resumen,
     contenido: entrada.contenido,
     etiquetas: entrada.etiquetas.join("\n"),
@@ -66,11 +73,13 @@ export function aFormulario(entrada: Entrada): EntradaFormValues {
   };
 }
 
-/** De los valores del formulario a lo que espera la API. Lo vacío viaja como null */
+/**
+ * De los valores del formulario a lo que espera la API. Lo vacío viaja como null. El slug no se manda: al crear,
+ * el backend lo arma desde el título, y al editar la entrada conserva el que tenía
+ */
 export function aEntradaInput(v: EntradaFormValues): CrearEntradaInput {
   return {
     titulo: v.titulo,
-    ...(v.slug && { slug: v.slug }), // sin slug, el backend lo arma o conserva el que tenía
     resumen: v.resumen,
     contenido: v.contenido,
     etiquetas: aLineas(v.etiquetas),
@@ -85,7 +94,7 @@ export function aEntradaInput(v: EntradaFormValues): CrearEntradaInput {
 const RENOMBRADOS: Record<string, string> = { "portada.url": "portadaUrl", "portada.alt": "portadaAlt" };
 
 const CON_MENSAJE =
-  /^(titulo|slug|resumen|contenido|etiquetas|portadaUrl|portadaAlt|estado|(galeria|documentos)\.(\d+\.\w+|root))$/;
+  /^(titulo|resumen|contenido|etiquetas|portadaUrl|portadaAlt|estado|(galeria|documentos)\.(\d+\.\w+|root))$/;
 
 /** Nombre de un campo en la API -> en el formulario, o null si el formulario no tiene dónde mostrar su error */
 export function campoFormulario(campo: string): string | null {
@@ -95,11 +104,15 @@ export function campoFormulario(campo: string): string | null {
   return CON_MENSAJE.test(nombre) ? nombre : null;
 }
 
-/** Lo que le falta a una entrada para estar completa (se muestra en la lista del panel) */
-export function pendientes(entrada: EntradaResumen): string[] {
-  const faltan: string[] = [];
-  if (!entrada.portada?.url) faltan.push("Sin portada");
-  if (entrada.galeria.some((i) => !i.url)) faltan.push("Imágenes sin subir");
-  if (entrada.documentos.some((d) => !d.url)) faltan.push("Documentos sin subir");
-  return faltan;
+/**
+ * Lo que le falta a una entrada para estar completa, en una línea (la lista y la vista previa del formulario),
+ * o null si no le falta nada: «Falta la portada», «Falta subir la portada, 2 fotos y el PDF»
+ */
+export function queFalta(entrada: Pick<EntradaResumen, "portada" | "galeria" | "documentos">): string | null {
+  return textoQueFalta({
+    sinPortada: !entrada.portada,
+    portadaSinSubir: !!entrada.portada && !entrada.portada.url,
+    fotos: entrada.galeria.filter((foto) => !foto.url).length,
+    pdfs: entrada.documentos.filter((documento) => !documento.url).length,
+  });
 }

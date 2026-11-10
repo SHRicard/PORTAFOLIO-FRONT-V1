@@ -1,5 +1,14 @@
 import { z } from "zod";
-import { texto, textoOpcional, urlObligatoria, urlOpcional, vacioANull } from "@/lib/validaciones";
+import {
+  aLineas,
+  lineas,
+  texto,
+  textoOpcional,
+  urlObligatoria,
+  urlOpcional,
+  urlOpcionalOArchivo,
+  vacioANull,
+} from "@/lib/validaciones";
 import type {
   CategoriaHabilidad,
   GuardarPerfilInput,
@@ -38,6 +47,9 @@ export const TIPOS_DATO = ["profesional", "personal"] as const satisfies readonl
 
 const opcion = { message: "Elegí una opción" };
 
+/** Igual que el backend: + y código de país, para que funcione wa.me */
+const TELEFONO = /^\+[0-9][0-9\s\-()]{5,24}$/;
+
 export const perfilSchema = z
   .object({
     nombreVisible: texto(80),
@@ -50,12 +62,23 @@ export const perfilSchema = z
     disponibilidadTexto: textoOpcional(160),
     bioCorta: texto(280),
     bioLarga: texto(2000),
-    correoContacto: z
+    /** El contacto va plano, como la ubicación: `aPerfilInput` arma el bloque `contacto` */
+    correo: z.string().trim().max(120, "Máximo 120 caracteres").pipe(z.email("Correo electrónico inválido")),
+    telefono: z
       .string()
       .trim()
-      .max(120, "Máximo 120 caracteres")
-      .pipe(z.email("Correo electrónico inválido")),
+      .refine(
+        (v) => v === "" || TELEFONO.test(v),
+        "Teléfono inválido: usá el formato internacional, por ejemplo +54 9 11 5555-1234",
+      ),
+    whatsapp: z.boolean(),
     redes: z.array(z.object({ tipo: z.enum(REDES, opcion), url: urlObligatoria })).max(20, "Máximo 20 redes"),
+    mensaje: textoOpcional(200),
+    /** Uno por línea */
+    abiertoA: lineas(10, 40),
+    tiempoRespuesta: textoOpcional(60),
+    horario: textoOpcional(80),
+    agenda: urlOpcional,
     habilidades: z
       .array(z.object({ nombre: texto(50), categoria: z.enum(CATEGORIAS, opcion) }))
       .max(100, "Máximo 100 habilidades"),
@@ -63,16 +86,18 @@ export const perfilSchema = z
     datosCuriosos: z
       .array(z.object({ titulo: texto(60), valor: texto(100), tipo: z.enum(TIPOS_DATO, opcion) }))
       .max(30, "Máximo 30 datos curiosos"),
-    fotoUrl: urlOpcional,
+    /** La foto y el CV elegidos guardan su URL local (blob:) hasta que se suben, al guardar */
+    fotoUrl: urlOpcionalOArchivo,
     fotoAlt: textoOpcional(200),
-    cvUrl: urlOpcional,
+    cvUrl: urlOpcionalOArchivo,
     /** Existe pero todavía no se subió: no tiene campo propio, viaja con el formulario */
     cvPendiente: z.boolean(),
   })
   .refine((v) => !v.fotoUrl || v.fotoAlt, {
     path: ["fotoAlt"],
     message: "Describí la imagen: lo necesita quien no puede verla",
-  });
+  })
+  .refine((v) => !v.whatsapp || v.telefono, { path: ["telefono"], message: "Cargá el número para marcar WhatsApp" });
 
 export type PerfilFormValues = z.infer<typeof perfilSchema>;
 
@@ -87,8 +112,15 @@ export const PERFIL_VACIO: PerfilFormValues = {
   disponibilidadTexto: "",
   bioCorta: "",
   bioLarga: "",
-  correoContacto: "",
+  correo: "",
+  telefono: "",
+  whatsapp: false,
   redes: [],
+  mensaje: "",
+  abiertoA: "",
+  tiempoRespuesta: "",
+  horario: "",
+  agenda: "",
   habilidades: [],
   idiomas: [],
   datosCuriosos: [],
@@ -110,8 +142,15 @@ export function aFormulario(perfil: Perfil): PerfilFormValues {
     disponibilidadTexto: perfil.disponibilidad.texto,
     bioCorta: perfil.bioCorta,
     bioLarga: perfil.bioLarga,
-    correoContacto: perfil.correoContacto,
-    redes: perfil.redes,
+    correo: perfil.contacto.correo,
+    telefono: perfil.contacto.telefono?.numero ?? "",
+    whatsapp: perfil.contacto.telefono?.whatsapp ?? false,
+    redes: perfil.contacto.redes,
+    mensaje: perfil.contacto.mensaje,
+    abiertoA: perfil.contacto.abiertoA.join("\n"),
+    tiempoRespuesta: perfil.contacto.tiempoRespuesta,
+    horario: perfil.contacto.horario,
+    agenda: perfil.contacto.agenda ?? "",
     habilidades: perfil.habilidades,
     idiomas: perfil.idiomas,
     datosCuriosos: perfil.datosCuriosos,
@@ -132,8 +171,17 @@ export function aPerfilInput(v: PerfilFormValues): GuardarPerfilInput {
     disponibilidad: { disponible: v.disponible, texto: v.disponibilidadTexto },
     bioCorta: v.bioCorta,
     bioLarga: v.bioLarga,
-    correoContacto: v.correoContacto,
-    redes: v.redes,
+    // Siempre el bloque completo: lo que no se manda, el backend lo deja vacío
+    contacto: {
+      correo: v.correo,
+      telefono: v.telefono ? { numero: v.telefono, whatsapp: v.whatsapp } : null,
+      redes: v.redes,
+      mensaje: v.mensaje,
+      abiertoA: aLineas(v.abiertoA),
+      tiempoRespuesta: v.tiempoRespuesta,
+      horario: v.horario,
+      agenda: vacioANull(v.agenda),
+    },
     habilidades: v.habilidades,
     idiomas: v.idiomas,
     datosCuriosos: v.datosCuriosos,
@@ -150,13 +198,21 @@ const RENOMBRADOS: Record<string, string> = {
   "foto.url": "fotoUrl",
   "foto.alt": "fotoAlt",
   "cv.url": "cvUrl",
+  "telefono.numero": "telefono",
 };
 
 const CON_MENSAJE =
-  /^(nombreVisible|rol|frase|ciudad|pais|modalidad|disponibilidadTexto|bioCorta|bioLarga|correoContacto|fotoUrl|fotoAlt|cvUrl|(redes|habilidades|idiomas|datosCuriosos)\.(\d+\.\w+|root))$/;
+  /^(nombreVisible|rol|frase|ciudad|pais|modalidad|disponibilidadTexto|bioCorta|bioLarga|correo|telefono|mensaje|abiertoA|tiempoRespuesta|horario|agenda|fotoUrl|fotoAlt|cvUrl|(redes|habilidades|idiomas|datosCuriosos)\.(\d+\.\w+|root))$/;
 
-/** Nombre de un campo en la API -> en el formulario, o null si el formulario no tiene dónde mostrar su error */
+/**
+ * Nombre de un campo en la API -> en el formulario, o null si el formulario no tiene dónde mostrar su
+ * error. Los del contacto llegan con prefijo (`contacto.correo`, `contacto.redes.0.url`).
+ * `contacto.telefono.whatsapp` no tiene campo, como `disponibilidad.disponible`: son casillas
+ */
 export function campoFormulario(campo: string): string | null {
-  const nombre = (RENOMBRADOS[campo] ?? campo).replace(/^(redes|habilidades|idiomas|datosCuriosos)$/, "$1.root");
+  const sinPrefijo = campo.replace(/^contacto\./, "");
+  const nombre = (RENOMBRADOS[sinPrefijo] ?? sinPrefijo)
+    .replace(/^abiertoA\.\d+$/, "abiertoA") // un elemento con error marca el textarea entero
+    .replace(/^(redes|habilidades|idiomas|datosCuriosos)$/, "$1.root");
   return CON_MENSAJE.test(nombre) ? nombre : null;
 }

@@ -32,6 +32,16 @@ export const urlOpcional = z
   .max(500, MENSAJE_LARGO_URL)
   .refine((v) => v === "" || esHttps(v), MENSAJE_URL);
 
+/**
+ * Como urlOpcional, pero también acepta un archivo elegido que todavía no se subió: el campo guarda su
+ * URL local (blob:) y se sube al guardar (ver features/archivos/subidasPendientes.ts)
+ */
+export const urlOpcionalOArchivo = z
+  .string()
+  .trim()
+  .max(500, MENSAJE_LARGO_URL)
+  .refine((v) => v === "" || esHttps(v) || v.startsWith("blob:"), MENSAJE_URL);
+
 /** Texto con un elemento por línea -> lista sin líneas vacías */
 export const aLineas = (valor: string) =>
   valor

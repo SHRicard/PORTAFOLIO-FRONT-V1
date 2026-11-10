@@ -1,24 +1,14 @@
 import { api } from "@/services/api";
 import type { ApiSuccess } from "@/types/api";
 import { sessionStarted } from "./authActions";
-import type { AuthData, LoginInput, RegisterInput, UpdateProfileInput, User } from "./types";
+import type { AuthData, LoginInput, UpdateProfileInput, User } from "./types";
 
-/** Endpoints del servicio de login. Contrato: docs/api/LOGIN.md */
+/**
+ * Endpoints del servicio de login. Contrato: docs/api/LOGIN.md. No usa `POST /users/register`: la
+ * app es de un solo dueño y no tiene registro
+ */
 export const authApi = api.injectEndpoints({
   endpoints: (build) => ({
-    register: build.mutation<AuthData, RegisterInput>({
-      query: (body) => ({ url: "/users/register", method: "POST", body }),
-      transformResponse: (res: ApiSuccess<AuthData>) => res.data,
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        try {
-          const { data } = await queryFulfilled;
-          dispatch(sessionStarted(data.token));
-        } catch {
-          /* el error lo muestra el formulario */
-        }
-      },
-    }),
-
     login: build.mutation<AuthData, LoginInput>({
       query: (body) => ({ url: "/users/login", method: "POST", body }),
       transformResponse: (res: ApiSuccess<AuthData>) => res.data,
@@ -46,4 +36,4 @@ export const authApi = api.injectEndpoints({
   }),
 });
 
-export const { useRegisterMutation, useLoginMutation, useGetMeQuery, useUpdateMeMutation } = authApi;
+export const { useLoginMutation, useGetMeQuery, useUpdateMeMutation } = authApi;

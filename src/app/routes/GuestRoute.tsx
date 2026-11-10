@@ -3,7 +3,7 @@ import { useAppSelector } from "@/app/hooks";
 import { safeRedirectPath } from "@/lib/redirect";
 
 /**
- * Rutas solo para quien NO tiene sesión (login y registro).
+ * Rutas solo para quien NO tiene sesión: el login.
  * Cuando el login termina bien, el token aparece en Redux y esto redirige solo:
  * a la ruta que el usuario intentaba abrir, o a /admin.
  */

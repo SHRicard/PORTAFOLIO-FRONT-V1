@@ -9,7 +9,6 @@ import {
   parrafos,
   RED,
   rango,
-  TIENDA,
   TIPO_DATO,
   TIPO_ESTUDIO,
   TIPO_PROYECTO,
@@ -30,7 +29,7 @@ export function Portafolio() {
   return (
     <>
       <SeccionPerfil perfil={perfil} />
-      <SeccionProyectos proyectos={proyectos} correo={perfil.correoContacto} />
+      <SeccionProyectos proyectos={proyectos} />
       <SeccionExperiencia experiencia={experiencia} />
       <SeccionEstudios estudios={estudios} />
     </>
@@ -51,6 +50,50 @@ export function Parrafos({ texto }: { texto: string }) {
       {parrafos(texto).map((p, i) => (
         <p key={i}>{p}</p>
       ))}
+    </>
+  );
+}
+
+/** wa.me y tel: piden solo dígitos */
+const soloDigitos = (numero: string) => numero.replace(/\D/g, "");
+
+/** Cada dato opcional se muestra solo si tiene valor */
+function SeccionContacto({ contacto }: { contacto: Perfil["contacto"] }) {
+  const { correo, telefono, redes, mensaje, abiertoA, tiempoRespuesta, horario, agenda } = contacto;
+
+  return (
+    <>
+      <h2>Contacto</h2>
+      {mensaje && <p>{mensaje}</p>}
+      {abiertoA.length > 0 && <p>Abierto a: {abiertoA.join(" · ")}</p>}
+      <p>
+        Correo: <a href={`mailto:${correo}`}>{correo}</a>
+      </p>
+      {telefono && (
+        <p>
+          Teléfono: <a href={`tel:+${soloDigitos(telefono.numero)}`}>{telefono.numero}</a>
+          {telefono.whatsapp && (
+            <>
+              {" · "}
+              <EnlaceExterno href={`https://wa.me/${soloDigitos(telefono.numero)}`}>WhatsApp</EnlaceExterno>
+            </>
+          )}
+        </p>
+      )}
+      {agenda && (
+        <p>
+          <EnlaceExterno href={agenda}>Agendá una llamada</EnlaceExterno>
+        </p>
+      )}
+      {tiempoRespuesta && <p>{tiempoRespuesta}</p>}
+      {horario && <p>Horario: {horario}</p>}
+      <ul>
+        {redes.map((red) => (
+          <li key={red.url}>
+            <EnlaceExterno href={red.url}>{RED[red.tipo]}</EnlaceExterno>
+          </li>
+        ))}
+      </ul>
     </>
   );
 }
@@ -80,17 +123,7 @@ function SeccionPerfil({ perfil }: { perfil: Perfil }) {
       <p>{perfil.bioCorta}</p>
       <Parrafos texto={perfil.bioLarga} />
 
-      <h2>Contacto</h2>
-      <p>
-        Correo: <a href={`mailto:${perfil.correoContacto}`}>{perfil.correoContacto}</a>
-      </p>
-      <ul>
-        {perfil.redes.map((red) => (
-          <li key={red.url}>
-            <EnlaceExterno href={red.url}>{RED[red.tipo]}</EnlaceExterno>
-          </li>
-        ))}
-      </ul>
+      <SeccionContacto contacto={perfil.contacto} />
       {perfil.cv && (
         <p>
           <EnlaceExterno href={perfil.cv.url}>Descargar CV</EnlaceExterno>
@@ -130,21 +163,21 @@ function SeccionPerfil({ perfil }: { perfil: Perfil }) {
   );
 }
 
-function SeccionProyectos({ proyectos, correo }: { proyectos: Proyecto[]; correo: string }) {
+function SeccionProyectos({ proyectos }: { proyectos: Proyecto[] }) {
   return (
     <section>
       <h2>Proyectos</h2>
       {proyectos.length === 0 && <p>Todavía no hay proyectos publicados.</p>}
       {proyectos.map((proyecto) => (
-        <FichaProyecto key={proyecto.id} proyecto={proyecto} correo={correo} />
+        <FichaProyecto key={proyecto.id} proyecto={proyecto} />
       ))}
     </section>
   );
 }
 
 /** Todo el proyecto como texto. Se usa en la lista y en el detalle */
-export function FichaProyecto({ proyecto, correo }: { proyecto: Proyecto; correo?: string }) {
-  const { enlaces } = proyecto;
+export function FichaProyecto({ proyecto }: { proyecto: Proyecto }) {
+  const [portada, ...galeria] = proyecto.galeria; // la primera es la portada
 
   return (
     <article>
@@ -159,53 +192,26 @@ export function FichaProyecto({ proyecto, correo }: { proyecto: Proyecto; correo
       <Parrafos texto={proyecto.descripcion} />
       {proyecto.tecnologias.length > 0 && <p>Tecnologías: {proyecto.tecnologias.join(", ")}</p>}
 
-      <ul>
-        {enlaces.demo && (
-          <li>
-            <EnlaceExterno href={enlaces.demo}>Ver demo</EnlaceExterno>
-          </li>
-        )}
-        {enlaces.repositorios.map((r) => (
-          <li key={r.url}>
-            Repositorio: <EnlaceExterno href={r.url}>{r.nombre}</EnlaceExterno>
-          </li>
-        ))}
-        {enlaces.tiendas.map((t) => (
-          <li key={`${t.tienda}-${t.app}`}>
-            {TIENDA[t.tienda]}: <EnlaceExterno href={t.url}>{t.app}</EnlaceExterno>
-          </li>
-        ))}
-        {enlaces.apkDemo && (
-          <li>
-            <EnlaceExterno href={enlaces.apkDemo.url}>Descargar APK demo</EnlaceExterno>
-            {enlaces.apkDemo.nota && <p>{enlaces.apkDemo.nota}</p>}
-          </li>
-        )}
-        {enlaces.demoPorSolicitud && (
-          <li>
-            Demo por Meet a pedido
-            {correo && (
-              <>
-                {": "}
-                <a href={`mailto:${correo}?subject=${encodeURIComponent(`Demo de ${proyecto.titulo}`)}`}>
-                  pedila por correo
-                </a>
-              </>
-            )}
-          </li>
-        )}
-      </ul>
+      {proyecto.repositorios.length > 0 && (
+        <ul>
+          {proyecto.repositorios.map((r) => (
+            <li key={r.url}>
+              Repositorio: <EnlaceExterno href={r.url}>{r.nombre}</EnlaceExterno>
+            </li>
+          ))}
+        </ul>
+      )}
 
-      {proyecto.portada && (
+      {portada && (
         <p>
-          Portada: <EnlaceExterno href={proyecto.portada.url}>{proyecto.portada.alt}</EnlaceExterno>
+          Portada: <EnlaceExterno href={portada.url}>{portada.alt}</EnlaceExterno>
         </p>
       )}
-      {proyecto.galeria.length > 0 && (
+      {galeria.length > 0 && (
         <>
           <p>Galería:</p>
           <ul>
-            {proyecto.galeria.map((imagen) => (
+            {galeria.map((imagen) => (
               <li key={imagen.url}>
                 <EnlaceExterno href={imagen.url}>{imagen.alt}</EnlaceExterno>
               </li>

@@ -2,7 +2,6 @@
 
 export type TipoProyecto = "personal" | "freelance" | "empresa";
 export type EstadoProyecto = "borrador" | "publicado" | "privado";
-export type TiendaApp = "playStore" | "appStore";
 
 /** url null = todavía no se subió o no se tiene */
 export interface Imagen {
@@ -15,28 +14,10 @@ export interface Documento {
   titulo: string;
 }
 
+/** Un link del proyecto: el código en GitHub, el Release con el APK de prueba... */
 export interface Repositorio {
   nombre: string;
   url: string;
-}
-
-export interface Tienda {
-  tienda: TiendaApp;
-  app: string;
-  url: string | null;
-}
-
-export interface ApkDemo {
-  url: string | null;
-  nota: string;
-}
-
-export interface Enlaces {
-  demo: string | null;
-  demoPorSolicitud: boolean;
-  repositorios: Repositorio[];
-  tiendas: Tienda[];
-  apkDemo: ApkDemo | null;
 }
 
 /** Tal cual está guardado: lo que ve el panel */
@@ -50,8 +31,8 @@ export interface Proyecto {
   resumen: string;
   descripcion: string;
   tecnologias: string[];
-  enlaces: Enlaces;
-  portada: Imagen | null;
+  repositorios: Repositorio[];
+  /** La primera imagen es la portada */
   galeria: Imagen[];
   documentos: Documento[];
   destacado: boolean;
@@ -71,8 +52,8 @@ export interface CrearProyectoInput {
   resumen: string;
   descripcion: string;
   tecnologias?: string[];
-  enlaces?: Enlaces;
-  portada?: Imagen | null;
+  repositorios?: Repositorio[];
+  /** La primera imagen es la portada */
   galeria?: Imagen[];
   documentos?: Documento[];
   destacado?: boolean;
@@ -82,3 +63,15 @@ export interface CrearProyectoInput {
 }
 
 export type ActualizarProyectoInput = Partial<CrearProyectoInput>;
+
+/**
+ * Qué pasó con el archivo de una foto eliminada (DELETE /proyectos/:id/galeria):
+ * "borrado" = se borró de Cloudinary · "en-uso" = otra parte del portafolio la usa, no se tocó · "externo" = no era de Cloudinary
+ */
+export type ResultadoArchivo = "borrado" | "en-uso" | "externo";
+
+export interface ImagenEliminada {
+  /** El proyecto ya sin la foto (vista del panel) */
+  proyecto: Proyecto;
+  archivo: ResultadoArchivo;
+}

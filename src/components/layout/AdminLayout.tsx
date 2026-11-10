@@ -16,6 +16,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { sessionEnded } from "@/features/auth/authActions";
 import { useGetMeQuery } from "@/features/auth/authApi";
+import { useAplicarTema } from "@/features/theme/useAplicarTema";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { NavCapsula, NavDock, NavTabs } from "./OpcionesNavegacion";
@@ -39,6 +40,8 @@ export function AdminLayout() {
   const dispatch = useAppDispatch();
   const { data: user } = useGetMeQuery();
   const navegacion = useAppSelector((state) => state.theme.navegacion);
+  // El tema del panel: no cambia por lo que pase en la web pública
+  useAplicarTema(useAppSelector((state) => state.theme.vars));
 
   return (
     <div className="min-h-screen">

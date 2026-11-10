@@ -1,6 +1,9 @@
 import { Portafolio } from "@/features/portafolio/Portafolio";
 import type { Vista } from "@/vistas/types";
+import celular from "./capturas/celular.webp";
+import escritorio from "./capturas/escritorio.webp";
 import { Encabezado } from "./Encabezado";
+import { tema } from "./tema";
 
 function Miniatura() {
   return (
@@ -18,6 +21,8 @@ export const basica: Vista = {
   nombre: "Básica",
   descripcion: "Tu contenido como texto, sin diseño.",
   Miniatura,
+  capturas: { escritorio, celular },
+  tema,
   Encabezado,
   Pagina: Portafolio,
 };

@@ -12,8 +12,8 @@ import { aProyectoInput, campoFormulario, type ProyectoFormValues } from "@/feat
 import { getErrorDetail, getErrorMessage } from "@/lib/errors";
 import { applyServerFieldErrors } from "@/lib/forms";
 import { Alert } from "@/components/ui/Alert";
+import { buttonVariants } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
-import { Subtitle, Title } from "@/components/ui/Typography";
 
 /** Crea un proyecto (/admin/proyectos/nuevo) o edita uno existente (/admin/proyectos/:id) */
 export default function ProyectoFormPage() {
@@ -32,24 +32,33 @@ export default function ProyectoFormPage() {
       else await crear(datos).unwrap();
       navigate("/admin/proyectos");
     } catch (err) {
-      if (!applyServerFieldErrors(err, setError, campoFormulario)) setErrorGeneral(getErrorDetail(err));
+      // Con portada en el formulario, galeria.0 de la API es la portada y las demás se corren un lugar
+      const conPortada = Boolean(valores.portadaUrl || valores.portadaAlt);
+      if (!applyServerFieldErrors(err, setError, (campo) => campoFormulario(campo, conPortada))) {
+        setErrorGeneral(getErrorDetail(err));
+      }
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link to="/admin/proyectos" className="inline-flex items-center gap-1 text-sm text-texto-suave hover:text-texto">
-          <ArrowLeft className="size-4" aria-hidden />
-          Volver a proyectos
-        </Link>
-        <Title className="mt-2">{id ? "Editar proyecto" : "Nuevo proyecto"}</Title>
-        <Subtitle className="mt-1 text-base">
-          {id ? proyecto?.titulo : "Los proyectos nuevos arrancan en borrador y van al final de la lista."}
-        </Subtitle>
-      </div>
+    <div className="space-y-4">
+      {/* El nombre, el estado, «Volver» y «Guardar» van en la barra del formulario */}
+      {!id && (
+        <p className="text-sm text-texto-suave">
+          Los proyectos nuevos arrancan en borrador y van al final de la lista.
+        </p>
+      )}
 
-      {error && <Alert tipo="error">{getErrorMessage(error)}</Alert>}
+      {/* Sin formulario (el proyecto no existe), «Volver» queda solo, debajo del error */}
+      {error && (
+        <div className="space-y-4">
+          <Alert tipo="error">{getErrorMessage(error)}</Alert>
+          <Link to="/admin/proyectos" className={buttonVariants({ estilo: "peligro" })}>
+            <ArrowLeft className="size-4" aria-hidden />
+            Volver a proyectos
+          </Link>
+        </div>
+      )}
       {id && isLoading && <Spinner />}
 
       {(!id || proyecto) && (
@@ -59,6 +68,7 @@ export default function ProyectoFormPage() {
           errorGeneral={errorGeneral}
           textoGuardar={id ? "Guardar cambios" : "Crear proyecto"}
           onGuardar={guardar}
+          volverA="/admin/proyectos"
         />
       )}
     </div>
